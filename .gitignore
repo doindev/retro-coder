@@ -1,0 +1,93 @@
+# Eclipse IDE
+.project
+.classpath
+.settings/
+.metadata/
+bin/
+.factorypath
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.log
+hs_err_pid*
+
+# Spring Boot
+*.log
+logs/
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Application-specific
+*.db
+*.sqlite
+*.sqlite3
+.autocoder/
+.agent.lock
+
+# Static resources (built from UI)
+src/main/resources/static/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Test output
+test-output/
+surefire-reports/
+
+# Node (for React UI)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build artifacts
+dist/
+*.min.js
+*.min.css
+
+# Lombok
+lombok.config
+
+# JRebel
+rebel.xml

@@ -1,0 +1,119 @@
+<!--
+  Project Specification Template
+  ==============================
+
+  This is a placeholder template. Replace with your actual project specification.
+
+  You can either:
+  1. Use the /create-spec command to generate this interactively with Claude
+  2. Manually edit this file following the structure below
+
+  See existing projects in generations/ for examples of complete specifications.
+-->
+
+<project_specification>
+  <project_name>YOUR_PROJECT_NAME</project_name>
+
+  <overview>
+    Describe your project in 2-3 sentences. What are you building? What problem
+    does it solve? Who is it for? Include key features and design goals.
+  </overview>
+
+  <technology_stack>
+    <frontend>
+      <framework>React with Vite</framework>
+      <styling>Tailwind CSS</styling>
+      <state_management>React hooks and context</state_management>
+      <routing>React Router for navigation</routing>
+      <port>3000</port>
+    </frontend>
+    <backend>
+      <runtime>Node.js with Express</runtime>
+      <database>SQLite with better-sqlite3</database>
+      <port>3001</port>
+    </backend>
+    <communication>
+      <api>RESTful endpoints</api>
+    </communication>
+  </technology_stack>
+
+  <prerequisites>
+    <environment_setup>
+      - Node.js 18+ installed
+      - npm or pnpm package manager
+      - Any API keys or external services needed
+    </environment_setup>
+  </prerequisites>
+
+  <core_features>
+    <authentication>
+      - User registration with email/password
+      - User login with session management
+      - User logout
+      - Password reset flow
+      - Profile management
+    </authentication>
+
+    <main_functionality>
+      - Create new items
+      - View list of items with pagination
+      - Edit existing items
+      - Delete items with confirmation
+      - Search and filter items
+    </main_functionality>
+
+    <user_interface>
+      - Responsive layout (mobile, tablet, desktop)
+      - Dark/light theme toggle
+      - Loading states and skeletons
+      - Error handling with user feedback
+      - Toast notifications for actions
+    </user_interface>
+
+    <data_management>
+      - Data validation on forms
+      - Auto-save drafts
+      - Export data functionality
+      - Import data functionality
+    </data_management>
+  </core_features>
+
+  <database_schema>
+    <tables>
+      <users>
+        - id (PRIMARY KEY)
+        - email (UNIQUE, NOT NULL)
+        - password_hash (NOT NULL)
+        - name
+        - avatar_url
+        - preferences (JSON)
+        - created_at, updated_at
+      </users>
+
+      <items>
+        - id (PRIMARY KEY)
+        - user_id (FOREIGN KEY -> users.id)
+        - title (NOT NULL)
+        - description
+        - status (enum: draft, active, archived)
+        - created_at, updated_at
+      </items>
+    </tables>
+  </database_schema>
+
+  <success_criteria>
+    <functionality>
+      - All features work as specified
+      - No console errors in browser
+      - Proper error handling throughout
+      - Data persists correctly in database
+    </functionality>
+
+    <user_experience>
+      - Intuitive navigation and workflows
+      - Responsive on all device sizes
+      - Fast load times (< 2s)
+      - Clear feedback for all actions
+    </user_experience>
+  </success_criteria>
+</project_specification>

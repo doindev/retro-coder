@@ -1,0 +1,75 @@
+# Autocoder Java - Main Configuration
+server:
+  port: 8888
+  address: 127.0.0.1  # Localhost only for security
+
+spring:
+  application:
+    name: autocoder-java
+
+  profiles:
+    active: sqlite  # Default database profile
+
+  # Jackson JSON configuration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+
+  # Servlet configuration for file uploads
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # Static resources (React UI)
+  web:
+    resources:
+      static-locations: classpath:/static/
+
+# Autocoder-specific configuration
+autocoder:
+  # Database configuration
+  database:
+    type: sqlite  # Options: sqlite, h2, postgresql
+    registry-path: ${user.home}/.autocoder/registry.db
+
+  # Claude integration configuration
+  claude:
+    default-mode: CLI_WRAPPER  # Options: CLI_WRAPPER, REST_API, JAVA_SDK
+    cli-command: claude
+    api-key: ${ANTHROPIC_API_KEY:}
+    default-model: claude-opus-4-5-20251101
+
+  # Available models
+  models:
+    - id: claude-opus-4-5-20251101
+      name: Claude Opus 4.5
+      default: true
+    - id: claude-sonnet-4-5-20250929
+      name: Claude Sonnet 4.5
+      default: false
+
+  # Agent configuration
+  agent:
+    auto-continue-delay: 3000  # milliseconds
+    max-iterations: -1  # -1 for unlimited
+    playwright-headless: false
+
+  # Webhook configuration
+  webhook:
+    n8n-url: ${PROGRESS_N8N_WEBHOOK_URL:}
+
+  # Security configuration
+  security:
+    localhost-only: true
+
+# Logging configuration
+logging:
+  level:
+    root: INFO
+    com.autocoder: DEBUG
+    org.springframework.web.socket: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

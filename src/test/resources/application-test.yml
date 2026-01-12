@@ -1,0 +1,33 @@
+# Test profile configuration
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+
+  h2:
+    console:
+      enabled: false
+
+autocoder:
+  database:
+    type: h2
+    registry-path: ${java.io.tmpdir}/autocoder-test/registry.db
+
+  claude:
+    default-mode: CLI_WRAPPER
+    cli-command: echo
+
+  security:
+    localhost-only: false
+
+logging:
+  level:
+    root: WARN
+    com.autocoder: DEBUG

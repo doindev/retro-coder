@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm install:*)",
+      "Bash(npx vite build)",
+      "Bash(.mvnw.cmd test:*)",
+      "Bash(cmd /c \"mvnw.cmd test -q\")",
+      "Bash(cmd /c \"mvnw.cmd compile\")",
+      "Bash(mvn compile:*)",
+      "Bash(mvn test:*)",
+      "Bash(curl:*)",
+      "Bash(python -m json.tool:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill //F //PID 43456)",
+      "Bash(taskkill //F //PID 23744)",
+      "Bash(taskkill //F //PID 13052)",
+      "Bash(./mvnw spring-boot:run:*)",
+      "Bash(ls:*)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(taskkill //F //PID 35352)",
+      "Bash(taskkill //F //PID 55952)",
+      "Bash(taskkill //F //PID 7288)",
+      "Bash(taskkill //F //PID 40720)",
+      "Bash(taskkill //F //PID 59812)",
+      "Bash(mvnw.cmd compile:*)",
+      "Bash(cmd /c \"mvnw.cmd compile -q\")",
+      "Bash(cmd /c \"npm run build\")",
+      "Bash(cmd /c \"xcopy /E /Y /I ui\\\\dist src\\\\main\\\\resources\\\\static\")",
+      "Bash(git commit:*)"
+    ]
+  }
+}
