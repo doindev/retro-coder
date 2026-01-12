@@ -29,7 +29,7 @@ export function KanbanBoard({ features, onFeatureClick, onAddFeature, onExpandPr
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pb-[45px]">
       <KanbanColumn
         title="Pending"
         count={features.pending.length}
