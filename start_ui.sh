@@ -20,7 +20,7 @@ if ! command -v mvn &> /dev/null; then
 fi
 
 # Build if JAR doesn't exist
-if [ ! -f "target/autocoder-java.jar" ]; then
+if [ ! -f "target/RetroCoder.jar" ]; then
     echo "Building project..."
     mvn clean package -DskipTests -q
     if [ $? -ne 0 ]; then

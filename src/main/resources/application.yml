@@ -1,11 +1,11 @@
-# Autocoder Java - Main Configuration
+# RetroCoder Java - Main Configuration
 server:
   port: 8888
   address: 127.0.0.1  # Localhost only for security
 
 spring:
   application:
-    name: autocoder-java
+    name: RetroCoder
 
   profiles:
     active: sqlite  # Default database profile
@@ -28,12 +28,12 @@ spring:
     resources:
       static-locations: classpath:/static/
 
-# Autocoder-specific configuration
-autocoder:
+# RetroCoder-specific configuration
+retrocoder:
   # Database configuration
   database:
     type: sqlite  # Options: sqlite, h2, postgresql
-    registry-path: ${user.home}/.autocoder/registry.db
+    registry-path: ${user.home}/eclipse-workspace/retro-coder/registry.db
 
   # Claude integration configuration
   claude:
@@ -69,7 +69,7 @@ autocoder:
 logging:
   level:
     root: INFO
-    com.autocoder: DEBUG
+    org.me.retrocoder: DEBUG
     org.springframework.web.socket: DEBUG
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

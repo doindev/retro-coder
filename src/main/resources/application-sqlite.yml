@@ -1,11 +1,11 @@
 # SQLite Database Configuration (Default)
 # Each project has its own features.db file
-# Registry database is stored at ~/.autocoder/registry.db
+# Registry database is stored at ~/.retro-coder/registry.db
 
 spring:
   datasource:
     # Registry database URL (for project registry)
-    url: jdbc:sqlite:${user.home}/.autocoder/registry.db
+    url: jdbc:sqlite:${user.home}/eclipse-workspace/retro-coder/registry.db
     driver-class-name: org.sqlite.JDBC
 
   jpa:
@@ -19,7 +19,7 @@ spring:
         jdbc:
           time_zone: UTC
 
-autocoder:
+retrocoder:
   database:
     type: sqlite
     enabled: true

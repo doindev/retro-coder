@@ -97,8 +97,8 @@ Fix ALL issues before considering the implementation complete. Never leave linti
 
 ## Project-Specific Context
 
-For this project (autocoder):
-- **Python Backend**: Uses SQLAlchemy, FastAPI, follows patterns in `api/`, `mcp_server/`
+For this project (RetroCoder):
+- **Java Backend**: Uses SQLAlchemy, FastAPI, follows patterns in `api/`, `mcp_server/`
 - **React UI**: Uses React 18, TypeScript, TanStack Query, Tailwind CSS v4, Radix UI
 - **Design System**: Neobrutalism style with specific color tokens and animations
 - **Security**: Defense-in-depth with bash command allowlists

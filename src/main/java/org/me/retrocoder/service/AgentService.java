@@ -241,6 +241,7 @@ public class AgentService {
             }
             runningAgents.remove(projectName);
             removeLockFile(projectPath);
+            cleanupTempClaudeFiles(projectPath);
         }
     }
 
@@ -280,8 +281,11 @@ public class AgentService {
         agentStatuses.put(projectName, AgentStatus.STOPPED);
         webSocketSessionManager.broadcastAgentStatus(projectName, AgentStatus.STOPPED);
 
-        // Remove lock file
-        registryService.getProjectPath(projectName).ifPresent(this::removeLockFile);
+        // Remove lock file and cleanup temp files
+        registryService.getProjectPath(projectName).ifPresent(path -> {
+            removeLockFile(path);
+            cleanupTempClaudeFiles(path);
+        });
     }
 
     /**
@@ -315,14 +319,20 @@ public class AgentService {
     }
 
     /**
-     * Clean up orphaned lock files on startup.
+     * Clean up orphaned lock files and temporary Claude CLI files on startup.
      */
     public void cleanupOrphanedLocks() {
         registryService.listProjects().forEach(project -> {
-            if (hasLockFile(project.getPath()) && !runningAgents.containsKey(project.getName())) {
-                removeLockFile(project.getPath());
+            String projectPath = project.getPath();
+
+            // Clean up orphaned lock files
+            if (hasLockFile(projectPath) && !runningAgents.containsKey(project.getName())) {
+                removeLockFile(projectPath);
                 log.info("Cleaned up orphaned lock file for project: {}", project.getName());
             }
+
+            // Always clean up any leftover temp Claude CLI files
+            cleanupTempClaudeFiles(projectPath);
         });
     }
 
@@ -418,6 +428,67 @@ public class AgentService {
             Files.deleteIfExists(Paths.get(projectPath, LOCK_FILE));
         } catch (IOException e) {
             log.warn("Failed to remove lock file for project: {}", projectPath, e);
+        }
+    }
+
+    /**
+     * Clean up temporary Claude CLI files (tmpclaude-*-cwd) from a project directory.
+     * These files are created by the Claude CLI process and should be removed when the agent stops.
+     */
+    private void cleanupTempClaudeFiles(String projectPath) {
+        try {
+            Path projectDir = Paths.get(projectPath);
+            if (!Files.exists(projectDir)) {
+                return;
+            }
+
+            // Find and delete all tmpclaude-*-cwd files in the project directory
+            try (var stream = Files.list(projectDir)) {
+                stream.filter(path -> {
+                    String fileName = path.getFileName().toString();
+                    return fileName.startsWith("tmpclaude-") && fileName.endsWith("-cwd");
+                }).forEach(path -> {
+                    try {
+                        Files.deleteIfExists(path);
+                        log.debug("Cleaned up temp file: {}", path);
+                    } catch (IOException e) {
+                        log.warn("Failed to delete temp file: {}", path, e);
+                    }
+                });
+            }
+
+            // Also check common subdirectories where Claude CLI might create temp files
+            cleanupTempClaudeFilesInSubdir(projectDir, "ui");
+            cleanupTempClaudeFilesInSubdir(projectDir, "src");
+
+        } catch (IOException e) {
+            log.warn("Failed to cleanup temp Claude files for project: {}", projectPath, e);
+        }
+    }
+
+    /**
+     * Clean up temporary Claude CLI files from a subdirectory.
+     */
+    private void cleanupTempClaudeFilesInSubdir(Path projectDir, String subdir) {
+        Path subdirPath = projectDir.resolve(subdir);
+        if (!Files.exists(subdirPath) || !Files.isDirectory(subdirPath)) {
+            return;
+        }
+
+        try (var stream = Files.list(subdirPath)) {
+            stream.filter(path -> {
+                String fileName = path.getFileName().toString();
+                return fileName.startsWith("tmpclaude-") && fileName.endsWith("-cwd");
+            }).forEach(path -> {
+                try {
+                    Files.deleteIfExists(path);
+                    log.debug("Cleaned up temp file in {}: {}", subdir, path);
+                } catch (IOException e) {
+                    log.warn("Failed to delete temp file: {}", path, e);
+                }
+            });
+        } catch (IOException e) {
+            log.warn("Failed to cleanup temp files in subdirectory: {}", subdirPath, e);
         }
     }
 }

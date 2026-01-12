@@ -31,7 +31,7 @@ export function KanbanColumn({
 }: KanbanColumnProps) {
   return (
     <div
-      className="neo-card overflow-hidden"
+      className="neo-card overflow-hidden flex flex-col h-[90vh]"
       style={{ borderColor: colorMap[color] }}
     >
       {/* Header */}
@@ -70,7 +70,7 @@ export function KanbanColumn({
       </div>
 
       {/* Cards */}
-      <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto bg-[var(--color-neo-bg)]">
+      <div className="p-4 space-y-3 flex-1 min-h-0 overflow-y-auto bg-[var(--color-neo-bg)]">
         {features.length === 0 ? (
           <div className="text-center py-8 text-[var(--color-neo-text-secondary)]">
             No features

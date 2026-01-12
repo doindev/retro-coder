@@ -126,7 +126,36 @@ export function useStartAgent(projectName: string) {
 
   return useMutation({
     mutationFn: (yoloMode: boolean = false) => api.startAgent(projectName, yoloMode),
-    onSuccess: () => {
+    onMutate: async () => {
+      // Cancel outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['agent-status', projectName] })
+
+      // Snapshot previous value for rollback
+      const previousStatus = queryClient.getQueryData<{ status: string }>(['agent-status', projectName])
+
+      // Optimistically update to 'running'
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: 'running',
+      }))
+
+      return { previousStatus }
+    },
+    onSuccess: (data) => {
+      // Update with actual status from response
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: data.status,
+      }))
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousStatus) {
+        queryClient.setQueryData(['agent-status', projectName], context.previousStatus)
+      }
+    },
+    onSettled: () => {
+      // Refetch to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['agent-status', projectName] })
     },
   })
@@ -137,7 +166,36 @@ export function useStopAgent(projectName: string) {
 
   return useMutation({
     mutationFn: () => api.stopAgent(projectName),
-    onSuccess: () => {
+    onMutate: async () => {
+      // Cancel outgoing refetches to avoid overwriting optimistic update
+      await queryClient.cancelQueries({ queryKey: ['agent-status', projectName] })
+
+      // Snapshot previous value for rollback
+      const previousStatus = queryClient.getQueryData<{ status: string }>(['agent-status', projectName])
+
+      // Optimistically update to 'stopped'
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: 'stopped',
+      }))
+
+      return { previousStatus }
+    },
+    onSuccess: (data) => {
+      // Update with actual status from response
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: data.status,
+      }))
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      if (context?.previousStatus) {
+        queryClient.setQueryData(['agent-status', projectName], context.previousStatus)
+      }
+    },
+    onSettled: () => {
+      // Refetch to ensure we have the latest data
       queryClient.invalidateQueries({ queryKey: ['agent-status', projectName] })
     },
   })
@@ -148,7 +206,29 @@ export function usePauseAgent(projectName: string) {
 
   return useMutation({
     mutationFn: () => api.pauseAgent(projectName),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['agent-status', projectName] })
+      const previousStatus = queryClient.getQueryData<{ status: string }>(['agent-status', projectName])
+
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: 'paused',
+      }))
+
+      return { previousStatus }
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: data.status,
+      }))
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousStatus) {
+        queryClient.setQueryData(['agent-status', projectName], context.previousStatus)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-status', projectName] })
     },
   })
@@ -159,7 +239,29 @@ export function useResumeAgent(projectName: string) {
 
   return useMutation({
     mutationFn: () => api.resumeAgent(projectName),
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ['agent-status', projectName] })
+      const previousStatus = queryClient.getQueryData<{ status: string }>(['agent-status', projectName])
+
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: 'running',
+      }))
+
+      return { previousStatus }
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData(['agent-status', projectName], (old: { status: string } | undefined) => ({
+        ...old,
+        status: data.status,
+      }))
+    },
+    onError: (_err, _variables, context) => {
+      if (context?.previousStatus) {
+        queryClient.setQueryData(['agent-status', projectName], context.previousStatus)
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['agent-status', projectName] })
     },
   })

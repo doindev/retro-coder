@@ -28,7 +28,8 @@
       "Bash(cmd /c \"mvnw.cmd compile -q\")",
       "Bash(cmd /c \"npm run build\")",
       "Bash(cmd /c \"xcopy /E /Y /I ui\\\\dist src\\\\main\\\\resources\\\\static\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(./mvnw compile:*)"
     ]
   }
 }

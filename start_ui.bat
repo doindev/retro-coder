@@ -25,7 +25,7 @@ if errorlevel 1 (
 )
 
 REM Build if JAR doesn't exist
-if not exist "target\autocoder-java.jar" (
+if not exist "target\RetroCoder.jar" (
     echo Building project...
     call mvn clean package -DskipTests -q
     if errorlevel 1 (
@@ -42,6 +42,6 @@ echo Press Ctrl+C to stop.
 echo.
 
 REM Run server mode (no --cli flag)
-java -jar target\autocoder-java.jar
+java -jar target\RetroCoder.jar
 
 endlocal
