@@ -40,6 +40,7 @@ public class AgentService {
     private static final String LOCK_FILE = ".agent.lock";
     private static final long RATE_LIMIT_PAUSE_MS = 60000; // 1 minute pause on rate limit
     private static final int MAX_RATE_LIMIT_RETRIES = 3;
+    private static final long SESSION_DELAY_MS = 3000; // 3 second delay between sessions
 
     /**
      * Get agent status for a project.
@@ -108,42 +109,59 @@ public class AgentService {
 
     /**
      * Main agent loop that runs the coding agent.
+     * Continues running sessions until all features are complete or stopped by user.
      */
     private void runAgentLoop(String projectName, String projectPath, boolean yoloMode) {
         ClaudeClient client = null;
         int rateLimitRetries = 0;
+        int sessionNumber = 0;
 
         try {
             client = clientFactory.createDefaultClient();
             runningClients.put(projectName, client);
 
-            // Check if we have features - determines initializer vs coding mode
-            int featureCount = featureService.getStats(projectName).getTotal();
-            boolean isInitializer = featureCount == 0;
-
-            log.info("Agent mode for {}: {} (features={})", projectName,
-                isInitializer ? "INITIALIZER" : "CODING", featureCount);
-
-            // Load appropriate prompt
-            String promptName = isInitializer ? "initializer_prompt.md"
-                : (yoloMode ? "coding_prompt_yolo.md" : "coding_prompt.md");
-
-            String prompt;
-            try {
-                prompt = promptService.getPromptContent(projectPath, promptName);
-                // Replace MCP tool references with curl API calls
-                prompt = adaptPromptForJava(prompt, projectName);
-            } catch (Exception e) {
-                log.error("Failed to load prompt: {}", promptName, e);
-                webSocketSessionManager.broadcastLog(projectName, "ERROR: Failed to load prompt: " + promptName);
-                throw e;
-            }
-
-            webSocketSessionManager.broadcastLog(projectName, "Starting " +
-                (isInitializer ? "initializer" : "coding") + " agent...");
-
-            // Run agent with rate limit retry loop
+            // Main loop - continue until all features complete or stopped
             while (!Boolean.TRUE.equals(stopRequested.get(projectName))) {
+                sessionNumber++;
+
+                // Check if we have features - determines initializer vs coding mode
+                var stats = featureService.getStats(projectName);
+                int totalFeatures = stats.getTotal();
+                int passingFeatures = stats.getPassing();
+                boolean isInitializer = totalFeatures == 0;
+
+                // Check if all features are complete
+                if (!isInitializer && passingFeatures >= totalFeatures) {
+                    log.info("All features complete for project: {} ({}/{})",
+                        projectName, passingFeatures, totalFeatures);
+                    webSocketSessionManager.broadcastLog(projectName,
+                        String.format("\n*** All %d features complete! ***", totalFeatures));
+                    break;
+                }
+
+                log.info("Agent session {} for {}: {} (features={}, passing={})",
+                    sessionNumber, projectName,
+                    isInitializer ? "INITIALIZER" : "CODING", totalFeatures, passingFeatures);
+
+                // Load appropriate prompt
+                String promptName = isInitializer ? "initializer_prompt.md"
+                    : (yoloMode ? "coding_prompt_yolo.md" : "coding_prompt.md");
+
+                String prompt;
+                try {
+                    prompt = promptService.getPromptContent(projectPath, promptName);
+                    // Replace MCP tool references with curl API calls
+                    prompt = adaptPromptForJava(prompt, projectName);
+                } catch (Exception e) {
+                    log.error("Failed to load prompt: {}", promptName, e);
+                    webSocketSessionManager.broadcastLog(projectName, "ERROR: Failed to load prompt: " + promptName);
+                    throw e;
+                }
+
+                webSocketSessionManager.broadcastLog(projectName,
+                    String.format("\n--- Starting %s session #%d (features: %d/%d complete) ---",
+                        isInitializer ? "initializer" : "coding", sessionNumber, passingFeatures, totalFeatures));
+
                 try {
                     // Run agent - send prompt and stream response
                     final ClaudeClient finalClient = client;
@@ -158,9 +176,17 @@ public class AgentService {
                         }
                     });
 
-                    log.info("Agent completed for project: {}", projectName);
-                    webSocketSessionManager.broadcastLog(projectName, "\n--- Agent session complete ---");
-                    break; // Success - exit loop
+                    log.info("Agent session {} completed for project: {}", sessionNumber, projectName);
+                    webSocketSessionManager.broadcastLog(projectName,
+                        "\n--- Session #" + sessionNumber + " complete ---");
+
+                    // Reset rate limit retries on success
+                    rateLimitRetries = 0;
+
+                    // Small delay before next session
+                    if (!Boolean.TRUE.equals(stopRequested.get(projectName))) {
+                        Thread.sleep(SESSION_DELAY_MS);
+                    }
 
                 } catch (RateLimitException e) {
                     rateLimitRetries++;
