@@ -167,8 +167,8 @@ export function ProjectRow({ project, onSelect, onCreateSpec }: ProjectRowProps)
 
         {/* Controls */}
         <div className="flex items-center gap-2">
-          {/* Create Spec button - only show if project has no spec */}
-          {!project.has_spec && onCreateSpec && (
+          {/* Create Spec button - only show if project has no spec AND agent is not running */}
+          {!project.has_spec && onCreateSpec && agentStatus === 'stopped' && (
             <button
               onClick={onCreateSpec}
               className="neo-btn text-sm py-2 px-3 bg-[var(--color-neo-pending)]"
@@ -177,8 +177,8 @@ export function ProjectRow({ project, onSelect, onCreateSpec }: ProjectRowProps)
               <FileText size={18} />
             </button>
           )}
-          {/* Agent Control - only show if project has a spec */}
-          {project.has_spec && (
+          {/* Agent Control - show if project has a spec OR if agent is currently running */}
+          {(project.has_spec || agentStatus === 'running' || agentStatus === 'paused') && (
             <AgentControl
               projectName={project.name}
               status={agentStatus}

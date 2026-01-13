@@ -194,6 +194,9 @@ public class AgentService {
                     webSocketSessionManager.broadcastLog(projectName,
                         "\n--- Session #" + sessionNumber + " complete ---");
 
+                    // Clean up temp files after each session
+                    cleanupTempClaudeFiles(projectPath);
+
                     // Reset rate limit retries on success
                     rateLimitRetries = 0;
 
@@ -456,11 +459,12 @@ public class AgentService {
                 return;
             }
 
-            // Find and delete all tmpclaude-*-cwd files in the project directory
+            // Find and delete all temp Claude CLI files in the project directory
+            // Matches patterns like: tmpclaude-*-cwd, tomclaude-*-cwd, or any *claude-*-cwd variant
             try (var stream = Files.list(projectDir)) {
                 stream.filter(path -> {
-                    String fileName = path.getFileName().toString();
-                    return fileName.startsWith("tmpclaude-") && fileName.endsWith("-cwd");
+                    String fileName = path.getFileName().toString().toLowerCase();
+                    return fileName.contains("claude-") && fileName.endsWith("-cwd");
                 }).forEach(path -> {
                     try {
                         Files.deleteIfExists(path);
@@ -491,8 +495,8 @@ public class AgentService {
 
         try (var stream = Files.list(subdirPath)) {
             stream.filter(path -> {
-                String fileName = path.getFileName().toString();
-                return fileName.startsWith("tmpclaude-") && fileName.endsWith("-cwd");
+                String fileName = path.getFileName().toString().toLowerCase();
+                return fileName.contains("claude-") && fileName.endsWith("-cwd");
             }).forEach(path -> {
                 try {
                     Files.deleteIfExists(path);
