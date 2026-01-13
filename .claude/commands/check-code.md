@@ -14,7 +14,7 @@ ruff check .
 
 python test_security.py
 
-From ui/ directory:
+From frontend/ directory:
 cd ui
 
 # ESLint (will fail until we add the config)

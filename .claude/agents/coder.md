@@ -106,10 +106,10 @@ For this project (RetroCoder):
 
 Always check:
 - `requirements.txt` for Python dependencies
-- `ui/package.json` for React dependencies
-- `ui/src/styles/globals.css` for design tokens
+- `frontend/package.json` for React dependencies
+- `frontend/src/styles/globals.css` for design tokens
 - `security.py` for allowed commands
-- Existing components in `ui/src/components/` for UI patterns
+- Existing components in `frontend/src/components/` for UI patterns
 - Existing routers in `server/routers/` for API patterns
 
 ## Communication Style
