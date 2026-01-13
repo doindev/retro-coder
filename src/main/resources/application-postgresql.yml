@@ -3,9 +3,9 @@
 
 spring:
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:autocoder}
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5432}/${POSTGRES_DB:retrocoder}
     driver-class-name: org.postgresql.Driver
-    username: ${POSTGRES_USER:autocoder}
+    username: ${POSTGRES_USER:retrocoder}
     password: ${POSTGRES_PASSWORD:changeme}
 
   jpa:
@@ -18,7 +18,7 @@ spring:
         jdbc:
           time_zone: UTC
 
-autocoder:
+retrocoder:
   database:
     type: postgresql
     enabled: false  # Disabled by default

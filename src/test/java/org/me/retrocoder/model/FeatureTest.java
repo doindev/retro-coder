@@ -1,4 +1,4 @@
-package com.autocoder.model;
+package org.me.retrocoder.model;
 
 import org.junit.jupiter.api.Test;
 import org.me.retrocoder.model.Feature;

@@ -9,12 +9,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Configuration properties for Autocoder application.
+ * Configuration properties for Retrocoder application.
  */
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "autocoder")
-public class AutocoderProperties {
+@ConfigurationProperties(prefix = "retrocoder")
+public class RetrocoderProperties {
 
     private Database database = new Database();
     private Claude claude = new Claude();

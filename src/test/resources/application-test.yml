@@ -15,10 +15,10 @@ spring:
     console:
       enabled: false
 
-autocoder:
+retrocoder:
   database:
     type: h2
-    registry-path: ${java.io.tmpdir}/autocoder-test/registry.db
+    registry-path: ${java.io.tmpdir}/retrocoder-test/registry.db
 
   claude:
     default-mode: CLI_WRAPPER
@@ -30,4 +30,4 @@ autocoder:
 logging:
   level:
     root: WARN
-    com.autocoder: DEBUG
+    org.me.retrocoder: DEBUG

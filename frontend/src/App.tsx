@@ -5,8 +5,8 @@ import { useProjectWebSocket } from './hooks/useWebSocket'
 import { useFeatureSound } from './hooks/useFeatureSound'
 import { useCelebration } from './hooks/useCelebration'
 
-const STORAGE_KEY = 'autocoder-selected-project'
-const VIEW_MODE_KEY = 'autocoder-view-mode'
+const STORAGE_KEY = 'retrocoder-selected-project'
+const VIEW_MODE_KEY = 'retrocoder-view-mode'
 
 import { ProjectSelector } from './components/ProjectSelector'
 import { KanbanBoard } from './components/KanbanBoard'

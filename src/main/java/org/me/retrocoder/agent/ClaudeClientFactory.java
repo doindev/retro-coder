@@ -3,7 +3,7 @@ package org.me.retrocoder.agent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.me.retrocoder.config.AutocoderProperties;
+import org.me.retrocoder.config.RetrocoderProperties;
 import org.me.retrocoder.model.ClaudeIntegrationMode;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -16,7 +16,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @RequiredArgsConstructor
 public class ClaudeClientFactory {
 
-    private final AutocoderProperties properties;
+    private final RetrocoderProperties properties;
     private final WebClient.Builder webClientBuilder;
 
     /**

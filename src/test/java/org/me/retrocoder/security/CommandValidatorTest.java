@@ -1,4 +1,4 @@
-package com.autocoder.security;
+package org.me.retrocoder.security;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

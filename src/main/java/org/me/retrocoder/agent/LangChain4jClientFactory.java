@@ -21,7 +21,7 @@ import dev.langchain4j.model.localai.LocalAiChatModel;
 import dev.langchain4j.model.localai.LocalAiStreamingChatModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.me.retrocoder.config.AutocoderProperties;
+import org.me.retrocoder.config.RetrocoderProperties;
 import org.me.retrocoder.model.AiAgentConfig;
 import org.me.retrocoder.model.LlmProviderType;
 import org.me.retrocoder.service.EncryptionService;
@@ -39,7 +39,7 @@ public class LangChain4jClientFactory {
 
     private final EncryptionService encryptionService;
     private final ObjectMapper objectMapper;
-    private final AutocoderProperties properties;
+    private final RetrocoderProperties properties;
 
     /**
      * Create a ChatModel from an AI agent configuration.

@@ -1,4 +1,4 @@
-package com.autocoder.model;
+package org.me.retrocoder.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;

@@ -3,7 +3,7 @@ package org.me.retrocoder.service;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.me.retrocoder.config.AutocoderProperties;
+import org.me.retrocoder.config.RetrocoderProperties;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
@@ -24,7 +24,7 @@ import java.util.Base64;
  *
  * Supports three-tier password resolution:
  * 1. RETROCODER_ENCRYPTION_KEY environment variable
- * 2. Application config (autocoder.security.encryption-key)
+ * 2. Application config (retrocoder.security.encryption-key)
  * 3. Session password (set via unlock endpoint)
  */
 @Slf4j
@@ -40,7 +40,7 @@ public class EncryptionService {
     private static final String KEY_ALGORITHM = "PBKDF2WithHmacSHA256";
     private static final String ENV_KEY_NAME = "RETROCODER_ENCRYPTION_KEY";
 
-    private final AutocoderProperties properties;
+    private final RetrocoderProperties properties;
     private final SecureRandom secureRandom = new SecureRandom();
 
     // Session-based encryption key (derived from password)

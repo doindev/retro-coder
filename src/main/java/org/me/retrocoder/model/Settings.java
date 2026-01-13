@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Key-value settings entity for global application settings.
- * Stored in the global registry database (~/.autocoder/registry.db).
+ * Stored in the global registry database (~/.retrocoder/registry.db).
  */
 @Data
 @Entity

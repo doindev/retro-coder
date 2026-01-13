@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 /**
  * Project entity for the project registry.
- * Stored in the global registry database (~/.autocoder/registry.db).
+ * Stored in the global registry database (~/.retrocoder/registry.db).
  */
 @Data
 @Entity

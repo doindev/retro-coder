@@ -36,4 +36,4 @@ echo "Press Ctrl+C to stop."
 echo ""
 
 # Run server mode (no --cli flag)
-java -jar target/autocoder-java.jar
+java -jar target/retrocoder.jar
