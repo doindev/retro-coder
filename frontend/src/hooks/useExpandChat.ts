@@ -89,7 +89,7 @@ export function useExpandChat({
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
-    const wsUrl = `${protocol}//${host}/api/expand/ws/${encodeURIComponent(projectName)}`
+    const wsUrl = `${protocol}//${host}/ws/expand-project/${encodeURIComponent(projectName)}`
 
     const ws = new WebSocket(wsUrl)
     wsRef.current = ws
