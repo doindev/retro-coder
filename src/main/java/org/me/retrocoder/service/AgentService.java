@@ -176,6 +176,10 @@ public class AgentService {
                     String.format("\n--- Starting %s session #%d (features: %d/%d complete) ---",
                         isInitializer ? "initializer" : "coding", sessionNumber, passingFeatures, totalFeatures));
 
+                // Clean up any existing temp files BEFORE starting a new session
+                // This prevents accumulation if previous sessions left files behind
+                cleanupTempClaudeFiles(projectPath);
+
                 try {
                     // Run agent - send prompt and stream response
                     final ClaudeClient finalClient = client;

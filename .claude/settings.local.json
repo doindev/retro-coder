@@ -53,7 +53,8 @@
       "Bash(mvn:*)",
       "Bash(powershell -Command \"$env:JAVA_HOME = ''C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2''; cd ''C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\retro-coder''; mvn -version\")",
       "Bash(powershell -Command \"$env:JAVA_HOME=''C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2''; Set-Location ''C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\retro-coder''; mvn -version 2>&1\")",
-      "Bash(cmd /c \"set JAVA_HOME=C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2 && mvn -version\")"
+      "Bash(cmd /c \"set JAVA_HOME=C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2 && mvn -version\")",
+      "Bash(git show:*)"
     ]
   }
 }

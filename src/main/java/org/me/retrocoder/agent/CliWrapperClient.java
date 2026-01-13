@@ -138,6 +138,10 @@ public class CliWrapperClient implements ClaudeClient {
         StringBuilder response = new StringBuilder();
         stopRequested = false;
 
+        // Clean up any existing temp files BEFORE starting a new process
+        // This prevents accumulation if previous processes left files behind
+        cleanupTempClaudeFiles(projectPath);
+
         try {
             List<String> command = new ArrayList<>();
 
