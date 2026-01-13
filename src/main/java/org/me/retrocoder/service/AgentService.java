@@ -455,6 +455,7 @@ public class AgentService {
     /**
      * Clean up temporary Claude CLI files (tmpclaude-*-cwd) from a project directory.
      * These files are created by the Claude CLI process and should be removed when the agent stops.
+     * Also cleans up 'nul' files which can be erroneously created on Windows.
      */
     private void cleanupTempClaudeFiles(String projectPath) {
         try {
@@ -465,13 +466,21 @@ public class AgentService {
 
             // Find and delete all temp Claude CLI files in the project directory
             // Matches patterns like: tmpclaude-*-cwd, tomclaude-*-cwd, or any *claude-*-cwd variant
+            // Also cleans up 'nul' files (Windows reserved name that shouldn't exist as a file)
             try (var stream = Files.list(projectDir)) {
                 stream.filter(path -> {
                     String fileName = path.getFileName().toString().toLowerCase();
-                    return fileName.contains("claude-") && fileName.endsWith("-cwd");
+                    return (fileName.contains("claude-") && fileName.endsWith("-cwd"))
+                            || fileName.equals("nul");
                 }).forEach(path -> {
                     try {
-                        Files.deleteIfExists(path);
+                        String fileName = path.getFileName().toString().toLowerCase();
+                        if (fileName.equals("nul") && isWindows()) {
+                            // On Windows, 'nul' is a reserved name and requires special deletion
+                            deleteWindowsReservedFile(path);
+                        } else {
+                            Files.deleteIfExists(path);
+                        }
                         log.debug("Cleaned up temp file: {}", path);
                     } catch (IOException e) {
                         log.warn("Failed to delete temp file: {}", path, e);
@@ -488,8 +497,41 @@ public class AgentService {
         }
     }
 
+    private boolean isWindows() {
+        return System.getProperty("os.name").toLowerCase().contains("win");
+    }
+
+    /**
+     * Delete a file with a Windows reserved name (like 'nul', 'con', 'aux', etc.).
+     * These require using the \\?\ or \\.\ prefix to bypass reserved name handling.
+     */
+    private void deleteWindowsReservedFile(Path path) throws IOException {
+        String absolutePath = path.toAbsolutePath().toString();
+        String deleteCommand = "del /f /q \"\\\\.\\" + absolutePath + "\"";
+        try {
+            Process process = new ProcessBuilder("cmd.exe", "/c", deleteCommand)
+                    .redirectErrorStream(true)
+                    .start();
+            boolean finished = process.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.warn("Timeout deleting reserved file: {}", path);
+            } else if (process.exitValue() != 0) {
+                // Try standard deletion as fallback
+                Files.deleteIfExists(path);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while deleting reserved file: " + path, e);
+        } catch (Exception e) {
+            // Try standard deletion as fallback
+            Files.deleteIfExists(path);
+        }
+    }
+
     /**
      * Clean up temporary Claude CLI files from a subdirectory.
+     * Also cleans up 'nul' files which can be erroneously created on Windows.
      */
     private void cleanupTempClaudeFilesInSubdir(Path projectDir, String subdir) {
         Path subdirPath = projectDir.resolve(subdir);
@@ -500,10 +542,17 @@ public class AgentService {
         try (var stream = Files.list(subdirPath)) {
             stream.filter(path -> {
                 String fileName = path.getFileName().toString().toLowerCase();
-                return fileName.contains("claude-") && fileName.endsWith("-cwd");
+                return (fileName.contains("claude-") && fileName.endsWith("-cwd"))
+                        || fileName.equals("nul");
             }).forEach(path -> {
                 try {
-                    Files.deleteIfExists(path);
+                    String fileName = path.getFileName().toString().toLowerCase();
+                    if (fileName.equals("nul") && isWindows()) {
+                        // On Windows, 'nul' is a reserved name and requires special deletion
+                        deleteWindowsReservedFile(path);
+                    } else {
+                        Files.deleteIfExists(path);
+                    }
                     log.debug("Cleaned up temp file in {}: {}", subdir, path);
                 } catch (IOException e) {
                     log.warn("Failed to delete temp file: {}", path, e);

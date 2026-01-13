@@ -265,6 +265,7 @@ public class CliWrapperClient implements ClaudeClient {
     /**
      * Clean up temporary Claude CLI files from a directory.
      * These files have names like tmpclaude-*-cwd or similar patterns.
+     * Also cleans up 'nul' files which can be erroneously created on Windows.
      */
     private void cleanupTempClaudeFiles(String projectPath) {
         try {
@@ -276,10 +277,18 @@ public class CliWrapperClient implements ClaudeClient {
             try (var stream = Files.list(projectDir)) {
                 stream.filter(path -> {
                     String fileName = path.getFileName().toString().toLowerCase();
-                    return fileName.contains("claude-") && fileName.endsWith("-cwd");
+                    // Clean up temp Claude files and 'nul' files (Windows reserved name that shouldn't exist as a file)
+                    return (fileName.contains("claude-") && fileName.endsWith("-cwd"))
+                            || fileName.equals("nul");
                 }).forEach(path -> {
                     try {
-                        Files.deleteIfExists(path);
+                        String fileName = path.getFileName().toString().toLowerCase();
+                        if (fileName.equals("nul") && isWindows()) {
+                            // On Windows, 'nul' is a reserved name and requires special deletion
+                            deleteWindowsReservedFile(path);
+                        } else {
+                            Files.deleteIfExists(path);
+                        }
                         log.debug("Cleaned up temp file: {}", path);
                     } catch (IOException e) {
                         log.warn("Failed to delete temp file: {}", path, e);
@@ -288,6 +297,34 @@ public class CliWrapperClient implements ClaudeClient {
             }
         } catch (IOException e) {
             log.warn("Failed to cleanup temp Claude files: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Delete a file with a Windows reserved name (like 'nul', 'con', 'aux', etc.).
+     * These require using the \\?\ or \\.\ prefix to bypass reserved name handling.
+     */
+    private void deleteWindowsReservedFile(Path path) throws IOException {
+        String absolutePath = path.toAbsolutePath().toString();
+        String deleteCommand = "del /f /q \"\\\\.\\" + absolutePath + "\"";
+        try {
+            Process process = new ProcessBuilder("cmd.exe", "/c", deleteCommand)
+                    .redirectErrorStream(true)
+                    .start();
+            boolean finished = process.waitFor(10, TimeUnit.SECONDS);
+            if (!finished) {
+                process.destroyForcibly();
+                log.warn("Timeout deleting reserved file: {}", path);
+            } else if (process.exitValue() != 0) {
+                // Try standard deletion as fallback
+                Files.deleteIfExists(path);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while deleting reserved file: " + path, e);
+        } catch (Exception e) {
+            // Try standard deletion as fallback
+            Files.deleteIfExists(path);
         }
     }
 
