@@ -187,8 +187,8 @@ public class CliWrapperClient implements ClaudeClient {
 
                     // Check for stop request
                     if (stopRequested) {
-                        log.info("Stop requested, terminating Claude CLI process");
-                        process.destroyForcibly();
+                        log.info("Stop requested, terminating Claude CLI process tree");
+                        killProcessTree(process);
                         throw new RuntimeException("Agent stopped by user");
                     }
 
@@ -235,7 +235,8 @@ public class CliWrapperClient implements ClaudeClient {
 
             boolean finished = process.waitFor(30, TimeUnit.MINUTES);
             if (!finished) {
-                process.destroyForcibly();
+                log.warn("Claude CLI timed out, killing process tree");
+                killProcessTree(process);
                 throw new RuntimeException("Claude CLI timed out");
             }
 
@@ -297,7 +298,74 @@ public class CliWrapperClient implements ClaudeClient {
         stopRequested = true;
         Process process = currentProcess;
         if (process != null && process.isAlive()) {
-            log.info("Forcibly destroying Claude CLI process");
+            log.info("Killing Claude CLI process tree");
+            killProcessTree(process);
+        }
+    }
+
+    /**
+     * Kill an entire process tree (the process and all its descendants).
+     * On Windows, process.destroyForcibly() only kills the parent cmd.exe,
+     * leaving child processes (like Claude CLI) orphaned. This method
+     * ensures all descendant processes are terminated first.
+     */
+    private void killProcessTree(Process process) {
+        if (process == null) {
+            return;
+        }
+
+        try {
+            ProcessHandle handle = process.toHandle();
+            long pid = handle.pid();
+            log.debug("Killing process tree for PID: {}", pid);
+
+            // First, recursively destroy all descendant processes (children, grandchildren, etc.)
+            handle.descendants().forEach(descendant -> {
+                try {
+                    log.debug("Killing descendant process PID: {}", descendant.pid());
+                    descendant.destroyForcibly();
+                } catch (Exception e) {
+                    log.warn("Failed to kill descendant process {}: {}", descendant.pid(), e.getMessage());
+                }
+            });
+
+            // Give descendants a moment to terminate
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // Now destroy the main process
+            process.destroyForcibly();
+
+            // Wait briefly for the process to terminate
+            try {
+                process.waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            // Verify termination
+            if (process.isAlive()) {
+                log.warn("Process {} still alive after destroyForcibly, attempting taskkill", pid);
+                // On Windows, use taskkill as a fallback with /T flag to kill tree
+                if (isWindows()) {
+                    try {
+                        new ProcessBuilder("taskkill", "/PID", String.valueOf(pid), "/T", "/F")
+                            .redirectErrorStream(true)
+                            .start()
+                            .waitFor(5, java.util.concurrent.TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        log.warn("Fallback taskkill failed: {}", e.getMessage());
+                    }
+                }
+            }
+
+            log.info("Process tree killed for PID: {}", pid);
+        } catch (Exception e) {
+            log.error("Error killing process tree", e);
+            // Fallback to simple destroyForcibly
             process.destroyForcibly();
         }
     }
