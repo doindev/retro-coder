@@ -41,6 +41,34 @@ public class Project {
     @Column(name = "model", length = 100)
     private String model;
 
+    /**
+     * Project-level default AI agent configuration ID.
+     * If null, uses global default.
+     */
+    @Column(name = "ai_agent_id")
+    private Long aiAgentId;
+
+    /**
+     * Override AI agent for spec creation role.
+     * If null, uses project's aiAgentId or global default.
+     */
+    @Column(name = "spec_creation_agent_id")
+    private Long specCreationAgentId;
+
+    /**
+     * Override AI agent for initialization role.
+     * If null, uses project's aiAgentId or global default.
+     */
+    @Column(name = "initialization_agent_id")
+    private Long initializationAgentId;
+
+    /**
+     * Override AI agent for coding role.
+     * If null, uses project's aiAgentId or global default.
+     */
+    @Column(name = "coding_agent_id")
+    private Long codingAgentId;
+
     @PrePersist
     protected void onCreate() {
         if (createdAt == null) {

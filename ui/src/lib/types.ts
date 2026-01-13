@@ -357,3 +357,93 @@ export interface SettingsUpdate {
   yolo_mode?: boolean
   model?: string
 }
+
+// ============================================================================
+// AI Agent Configuration Types
+// ============================================================================
+
+export type LlmProviderType =
+  | 'CLAUDE_CODE'
+  | 'OPENAI'
+  | 'ANTHROPIC'
+  | 'AZURE_OPENAI'
+  | 'GOOGLE_GEMINI'
+  | 'MISTRAL_AI'
+  | 'OLLAMA'
+  | 'LOCAL_AI'
+  | 'AMAZON_BEDROCK'
+  | 'HUGGING_FACE'
+  | 'CUSTOM'
+
+export interface CredentialField {
+  name: string
+  label: string
+  type: 'text' | 'password' | 'url'
+  required: boolean
+  placeholder: string
+}
+
+export interface ProviderInfo {
+  type: LlmProviderType
+  displayName: string
+  description: string
+  requiredCredentials: CredentialField[]
+  supportsCustomEndpoint: boolean
+  supportsStreaming: boolean
+}
+
+export interface AiAgentConfig {
+  id: number
+  name: string
+  providerType: LlmProviderType
+  endpointUrl: string | null
+  defaultModel: string
+  cachedModels: ModelInfo[] | null
+  providerSettings: Record<string, unknown> | null
+  enabled: boolean
+  createdAt: string
+  updatedAt: string
+  modelsLastFetched: string | null
+}
+
+export interface AiAgentConfigCreate {
+  name: string
+  providerType: LlmProviderType
+  credentials: Record<string, string>
+  endpointUrl?: string
+  defaultModel: string
+  providerSettings?: Record<string, unknown>
+}
+
+export interface AiAgentConfigUpdate {
+  name?: string
+  providerType?: LlmProviderType
+  credentials?: Record<string, string>
+  endpointUrl?: string
+  defaultModel?: string
+  providerSettings?: Record<string, unknown>
+  enabled?: boolean
+}
+
+export interface DiscoverModelsRequest {
+  providerType: LlmProviderType
+  credentials: Record<string, string>
+  endpointUrl?: string
+}
+
+export interface AgentDefaults {
+  defaultAgentId: number | null
+  specCreationAgentId: number | null
+  initializationAgentId: number | null
+  codingAgentId: number | null
+}
+
+// Security/Encryption Types
+export interface SecurityStatus {
+  unlocked: boolean
+  passwordSource: 'environment' | 'config' | 'session' | null
+}
+
+export interface UnlockRequest {
+  password: string
+}

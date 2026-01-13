@@ -1,6 +1,9 @@
-import { useEffect, useRef } from 'react'
-import { X, Loader2, AlertCircle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { X, Loader2, AlertCircle, Bot } from 'lucide-react'
 import { useSettings, useUpdateSettings, useAvailableModels } from '../hooks/useProjects'
+import { useSecurityStatus } from '../hooks/useAiAgents'
+import { AiAgentsModal } from './AiAgentsModal'
+import { UnlockPrompt } from './UnlockPrompt'
 
 interface SettingsModalProps {
   onClose: () => void
@@ -9,26 +12,42 @@ interface SettingsModalProps {
 export function SettingsModal({ onClose }: SettingsModalProps) {
   const { data: settings, isLoading, isError, refetch } = useSettings()
   const { data: modelsData } = useAvailableModels()
+  const { data: securityStatus } = useSecurityStatus()
   const updateSettings = useUpdateSettings()
   const modalRef = useRef<HTMLDivElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  const [showAiAgents, setShowAiAgents] = useState(false)
+  const [showUnlock, setShowUnlock] = useState(false)
+  const onCloseRef = useRef(onClose)
+  const hasInitialFocus = useRef(false)
+
+  // Keep onClose ref updated
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
+
+  // Focus close button only on initial mount
+  useEffect(() => {
+    if (!hasInitialFocus.current) {
+      closeButtonRef.current?.focus()
+      hasInitialFocus.current = true
+    }
+  }, [])
 
   // Focus trap - keep focus within modal
   useEffect(() => {
     const modal = modalRef.current
     if (!modal) return
 
-    // Focus the close button when modal opens
-    closeButtonRef.current?.focus()
-
-    const focusableElements = modal.querySelectorAll<HTMLElement>(
-      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-    )
-    const firstElement = focusableElements[0]
-    const lastElement = focusableElements[focusableElements.length - 1]
-
     const handleTabKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return
+
+      const focusableElements = modal.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )
+      const firstElement = focusableElements[0]
+      const lastElement = focusableElements[focusableElements.length - 1]
 
       if (e.shiftKey) {
         if (document.activeElement === firstElement) {
@@ -45,7 +64,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        onCloseRef.current()
       }
     }
 
@@ -56,7 +75,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
       document.removeEventListener('keydown', handleTabKey)
       document.removeEventListener('keydown', handleEscape)
     }
-  }, [onClose])
+  }, [])
 
   const handleYoloToggle = () => {
     if (settings && !updateSettings.isPending) {
@@ -67,6 +86,14 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
   const handleModelChange = (modelId: string) => {
     if (!updateSettings.isPending) {
       updateSettings.mutate({ model: modelId })
+    }
+  }
+
+  const handleAiAgentsClick = () => {
+    if (securityStatus?.unlocked) {
+      setShowAiAgents(true)
+    } else {
+      setShowUnlock(true)
     }
   }
 
@@ -199,6 +226,20 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
               </div>
             </div>
 
+            {/* AI Agents Button */}
+            <div className="border-t-3 border-[var(--color-neo-border)] pt-6">
+              <button
+                onClick={handleAiAgentsClick}
+                className="neo-btn neo-btn-secondary w-full flex items-center justify-center gap-2"
+              >
+                <Bot size={18} />
+                Configure AI Agents
+              </button>
+              <p className="text-xs text-[var(--color-neo-text-secondary)] mt-2 text-center">
+                Use different LLM providers like OpenAI, Ollama, etc.
+              </p>
+            </div>
+
             {/* Update Error */}
             {updateSettings.isError && (
               <div className="p-3 bg-red-50 border-3 border-red-200 text-red-700 text-sm">
@@ -208,6 +249,22 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           </div>
         )}
       </div>
+
+      {/* AI Agents Modal */}
+      {showAiAgents && (
+        <AiAgentsModal onClose={() => setShowAiAgents(false)} />
+      )}
+
+      {/* Unlock Prompt */}
+      {showUnlock && (
+        <UnlockPrompt
+          onClose={() => setShowUnlock(false)}
+          onUnlocked={() => {
+            setShowUnlock(false)
+            setShowAiAgents(true)
+          }}
+        />
+      )}
     </div>
   )
 }

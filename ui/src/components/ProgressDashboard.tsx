@@ -15,7 +15,7 @@ export function ProgressDashboard({
 }: ProgressDashboardProps) {
   return (
     <div className="neo-card p-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-0">
         <h2 className="font-display text-xl font-bold uppercase">
           Progress
         </h2>

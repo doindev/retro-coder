@@ -30,7 +30,30 @@
       "Bash(cmd /c \"xcopy /E /Y /I ui\\\\dist src\\\\main\\\\resources\\\\static\")",
       "Bash(git commit:*)",
       "Bash(./mvnw compile:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.langchain4j.dev)",
+      "WebFetch(domain:mvnrepository.com)",
+      "Bash(java -version:*)",
+      "Bash(mvn clean compile:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(where:*)",
+      "Bash(dir \"C:\\\\Program Files\\\\Java\")",
+      "Bash(dir \"C:\\\\Program Files\\\\OpenJDK\")",
+      "Bash(dir \"C:\\\\Program Files\")",
+      "Bash(findstr:*)",
+      "Bash(dir \"C:\\\\Program Files \\(x86\\)\")",
+      "Bash(export JAVA_HOME=\"/c/Program Files/OpenJDK/jdk-22.0.2\")",
+      "Bash(export PATH=\"$JAVA_HOME/bin:$PATH\")",
+      "Bash(set \"JAVA_HOME=C:\\\\Program Files\\\\OpenJDK\\\\jdk-22.0.2\")",
+      "Bash(\"C:\\\\Program Files\\\\OpenJDK\\\\jdk-22.0.2\\\\bin\\\\java\" -version)",
+      "Bash(dir:*)",
+      "Bash(set \"JAVA_HOME=C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2\")",
+      "Bash(\"C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2\\\\bin\\\\java\" -version)",
+      "Bash(mvn:*)",
+      "Bash(powershell -Command \"$env:JAVA_HOME = ''C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2''; cd ''C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\retro-coder''; mvn -version\")",
+      "Bash(powershell -Command \"$env:JAVA_HOME=''C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2''; Set-Location ''C:\\\\Users\\\\timhj\\\\eclipse-workspace\\\\retro-coder''; mvn -version 2>&1\")",
+      "Bash(cmd /c \"set JAVA_HOME=C:\\\\Program Files\\\\OpenJDK\\\\jdk-21.0.2 && mvn -version\")"
     ]
   }
 }

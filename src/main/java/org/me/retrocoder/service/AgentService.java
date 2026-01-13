@@ -5,8 +5,11 @@ import lombok.extern.slf4j.Slf4j;
 
 import org.me.retrocoder.agent.ClaudeClient;
 import org.me.retrocoder.agent.ClaudeClientFactory;
+import org.me.retrocoder.agent.LangChain4jClientFactory;
 import org.me.retrocoder.agent.RateLimitException;
+import org.me.retrocoder.model.AgentRole;
 import org.me.retrocoder.model.AgentStatus;
+import org.me.retrocoder.model.AiAgentConfig;
 import org.me.retrocoder.model.dto.AgentStatusDTO;
 import org.me.retrocoder.websocket.WebSocketSessionManager;
 import org.springframework.stereotype.Service;
@@ -29,6 +32,8 @@ public class AgentService {
     private final RegistryService registryService;
     private final WebSocketSessionManager webSocketSessionManager;
     private final ClaudeClientFactory clientFactory;
+    private final LangChain4jClientFactory langChain4jClientFactory;
+    private final AiAgentConfigService aiAgentConfigService;
     private final PromptService promptService;
     private final FeatureService featureService;
 
@@ -117,7 +122,16 @@ public class AgentService {
         int sessionNumber = 0;
 
         try {
-            client = clientFactory.createDefaultClient();
+            // Get the AI agent configuration for the coding role
+            AiAgentConfig agentConfig = aiAgentConfigService.getAgentForRole(AgentRole.CODING, projectName);
+            if (agentConfig != null) {
+                log.info("Using AI agent '{}' ({}) for project: {}",
+                    agentConfig.getName(), agentConfig.getProviderType(), projectName);
+                client = langChain4jClientFactory.createClaudeClient(agentConfig);
+            } else {
+                log.info("No AI agent configured, using default Claude CLI for project: {}", projectName);
+                client = clientFactory.createDefaultClient();
+            }
             runningClients.put(projectName, client);
 
             // Main loop - continue until all features complete or stopped

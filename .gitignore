@@ -61,7 +61,7 @@ Thumbs.db
 .agent.lock
 
 # Static resources (built from UI)
-src/main/resources/static/
+# src/main/resources/static/
 
 # Environment files
 .env

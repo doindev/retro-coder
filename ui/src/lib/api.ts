@@ -21,6 +21,14 @@ import type {
   Settings,
   SettingsUpdate,
   ModelsResponse,
+  AiAgentConfig,
+  AiAgentConfigCreate,
+  AiAgentConfigUpdate,
+  DiscoverModelsRequest,
+  ProviderInfo,
+  AgentDefaults,
+  SecurityStatus,
+  ModelInfo,
 } from './types'
 
 const API_BASE = '/api'
@@ -315,5 +323,90 @@ export async function updateSettings(settings: SettingsUpdate): Promise<Settings
   return fetchJSON('/settings', {
     method: 'PATCH',
     body: JSON.stringify(settings),
+  })
+}
+
+// ============================================================================
+// AI Agent Configuration API
+// ============================================================================
+
+export async function listAiAgents(): Promise<AiAgentConfig[]> {
+  return fetchJSON('/ai-agents')
+}
+
+export async function listEnabledAiAgents(): Promise<AiAgentConfig[]> {
+  return fetchJSON('/ai-agents/enabled')
+}
+
+export async function getAiAgent(id: number): Promise<AiAgentConfig> {
+  return fetchJSON(`/ai-agents/${id}`)
+}
+
+export async function createAiAgent(config: AiAgentConfigCreate): Promise<AiAgentConfig> {
+  return fetchJSON('/ai-agents', {
+    method: 'POST',
+    body: JSON.stringify(config),
+  })
+}
+
+export async function updateAiAgent(id: number, config: AiAgentConfigUpdate): Promise<AiAgentConfig> {
+  return fetchJSON(`/ai-agents/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(config),
+  })
+}
+
+export async function deleteAiAgent(id: number): Promise<void> {
+  await fetchJSON(`/ai-agents/${id}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function discoverModels(request: DiscoverModelsRequest): Promise<ModelInfo[]> {
+  return fetchJSON('/ai-agents/discover-models', {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+}
+
+export async function refreshAgentModels(id: number): Promise<ModelInfo[]> {
+  return fetchJSON(`/ai-agents/${id}/refresh-models`, {
+    method: 'POST',
+  })
+}
+
+export async function getProviders(): Promise<ProviderInfo[]> {
+  return fetchJSON('/ai-agents/providers')
+}
+
+export async function getAgentDefaults(): Promise<AgentDefaults> {
+  return fetchJSON('/ai-agents/defaults')
+}
+
+export async function updateAgentDefaults(defaults: AgentDefaults): Promise<AgentDefaults> {
+  return fetchJSON('/ai-agents/defaults', {
+    method: 'PUT',
+    body: JSON.stringify(defaults),
+  })
+}
+
+// ============================================================================
+// Security API
+// ============================================================================
+
+export async function getSecurityStatus(): Promise<SecurityStatus> {
+  return fetchJSON('/security/status')
+}
+
+export async function unlockEncryption(password: string): Promise<void> {
+  await fetchJSON('/security/unlock', {
+    method: 'POST',
+    body: JSON.stringify({ password }),
+  })
+}
+
+export async function lockEncryption(): Promise<void> {
+  await fetchJSON('/security/lock', {
+    method: 'POST',
   })
 }

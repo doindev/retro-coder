@@ -53,6 +53,7 @@ public class AutocoderProperties {
     @Data
     public static class Security {
         private boolean localhostOnly = true;
+        private String encryptionKey;  // Optional: encryption key for credential storage
     }
 
     @Data
