@@ -1,11 +1,18 @@
-import { useState, useId, useRef } from 'react'
-import { X, Plus, Trash2, Loader2, AlertCircle, Sparkles, StopCircle } from 'lucide-react'
+import { useState, useId, useRef, useCallback } from 'react'
+import { X, Plus, Trash2, Loader2, AlertCircle, Sparkles, StopCircle, Upload, FileText } from 'lucide-react'
 import { useCreateFeature } from '../hooks/useProjects'
 import * as api from '../lib/api'
 
 interface Step {
   id: string
   value: string
+}
+
+interface UploadedFile {
+  id: string
+  name: string
+  path: string
+  content: string
 }
 
 interface AddFeatureFormProps {
@@ -23,9 +30,85 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
   const [error, setError] = useState<string | null>(null)
   const [stepCounter, setStepCounter] = useState(1)
   const [isExpanding, setIsExpanding] = useState(false)
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([])
+  const [isDragging, setIsDragging] = useState(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const createFeature = useCreateFeature(projectName)
+
+  // File handling
+  const handleFiles = useCallback(async (files: FileList | File[]) => {
+    const fileArray = Array.from(files)
+    const newFiles: UploadedFile[] = []
+
+    for (const file of fileArray) {
+      // Only accept text-based files
+      if (file.type.startsWith('text/') ||
+          file.name.endsWith('.ts') ||
+          file.name.endsWith('.tsx') ||
+          file.name.endsWith('.js') ||
+          file.name.endsWith('.jsx') ||
+          file.name.endsWith('.java') ||
+          file.name.endsWith('.py') ||
+          file.name.endsWith('.json') ||
+          file.name.endsWith('.xml') ||
+          file.name.endsWith('.yaml') ||
+          file.name.endsWith('.yml') ||
+          file.name.endsWith('.md') ||
+          file.name.endsWith('.css') ||
+          file.name.endsWith('.html') ||
+          file.name.endsWith('.sql') ||
+          file.name.endsWith('.log') ||
+          file.name.endsWith('.txt')) {
+        try {
+          const content = await file.text()
+          newFiles.push({
+            id: crypto.randomUUID(),
+            name: file.name,
+            path: (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name,
+            content: content.slice(0, 10000), // Limit content size
+          })
+        } catch (err) {
+          console.error('Failed to read file:', file.name, err)
+        }
+      }
+    }
+
+    setUploadedFiles(prev => [...prev, ...newFiles])
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+  }, [])
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    setIsDragging(false)
+    if (e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files)
+    }
+  }, [handleFiles])
+
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click()
+  }
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleFiles(e.target.files)
+    }
+  }
+
+  const removeFile = (id: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== id))
+  }
 
   const handleExpandWithAI = async () => {
     // If already expanding, cancel the operation
@@ -42,13 +125,22 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
     setError(null)
     setIsExpanding(true)
 
+    // Build full description including file contents
+    let fullDescription = description
+    if (uploadedFiles.length > 0) {
+      fullDescription += '\n\n--- Related Files ---\n'
+      for (const file of uploadedFiles) {
+        fullDescription += `\n### File: ${file.name}\n\`\`\`\n${file.content}\n\`\`\`\n`
+      }
+    }
+
     // Create new AbortController for this request
     abortControllerRef.current = new AbortController()
 
     try {
       const result = await api.expandFeature(
         projectName,
-        { description },
+        { description: fullDescription },
         abortControllerRef.current.signal
       )
 
@@ -122,11 +214,8 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
   const isValid = category.trim() && name.trim() && description.trim()
 
   return (
-    <div className="neo-modal-backdrop" onClick={onClose}>
-      <div
-        className="neo-modal w-full max-w-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="neo-modal-backdrop">
+      <div className="neo-modal w-full max-w-2xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b-3 border-[var(--color-neo-border)]">
           <h2 className="font-display text-2xl font-bold">
@@ -239,6 +328,71 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
             <p className="text-xs text-[var(--color-neo-text-secondary)] mt-1">
               Type a description then click the <Sparkles size={12} className="inline" /> button to auto-fill the form with AI
             </p>
+          </div>
+
+          {/* File Upload Area */}
+          <div>
+            <label className="block font-display font-bold mb-2 uppercase text-sm">
+              Related Files (Optional)
+            </label>
+            <div
+              className={`border-3 border-dashed rounded-lg p-6 text-center transition-colors ${
+                isDragging
+                  ? 'border-[var(--color-neo-primary)] bg-blue-50'
+                  : 'border-[var(--color-neo-border)] hover:border-[var(--color-neo-primary)]'
+              }`}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <Upload size={32} className="mx-auto mb-3 text-[var(--color-neo-text-secondary)]" />
+              <p className="text-[var(--color-neo-text-secondary)] mb-2">
+                Drag & drop files here, or
+              </p>
+              <button
+                type="button"
+                onClick={handleBrowseClick}
+                className="neo-btn neo-btn-ghost text-sm"
+              >
+                Browse Files
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                onChange={handleFileInputChange}
+                className="hidden"
+                accept=".ts,.tsx,.js,.jsx,.java,.py,.json,.xml,.yaml,.yml,.md,.css,.html,.sql,.log,.txt"
+              />
+              <p className="text-xs text-[var(--color-neo-text-secondary)] mt-3">
+                Supports: .ts, .tsx, .js, .java, .py, .json, .md, .log, .txt and more
+              </p>
+            </div>
+
+            {/* Uploaded Files List */}
+            {uploadedFiles.length > 0 && (
+              <div className="mt-3 space-y-2">
+                {uploadedFiles.map((file) => (
+                  <div
+                    key={file.id}
+                    className="flex items-center gap-3 p-3 bg-[var(--color-neo-bg)] border-2 border-[var(--color-neo-border)] rounded"
+                  >
+                    <FileText size={18} className="text-[var(--color-neo-text-secondary)] flex-shrink-0" />
+                    <span className="flex-1 font-mono text-sm truncate">{file.name}</span>
+                    <span className="text-xs text-[var(--color-neo-text-secondary)]">
+                      {Math.round(file.content.length / 1024)}KB
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeFile(file.id)}
+                      className="neo-btn neo-btn-ghost p-1 text-red-600"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Steps */}
