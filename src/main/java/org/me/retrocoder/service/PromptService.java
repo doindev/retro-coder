@@ -64,6 +64,13 @@ public class PromptService {
     }
 
     /**
+     * Load build validator prompt.
+     */
+    public String getBuildValidatorPrompt(String projectPath) {
+        return loadPrompt("build_validator_prompt", projectPath);
+    }
+
+    /**
      * Load app spec.
      */
     public String getAppSpec(String projectPath) {
@@ -115,6 +122,7 @@ public class PromptService {
             copyTemplateIfNotExists("initializer_prompt.template.md", promptsDir.resolve("initializer_prompt.md"));
             copyTemplateIfNotExists("coding_prompt.template.md", promptsDir.resolve("coding_prompt.md"));
             copyTemplateIfNotExists("coding_prompt_yolo.template.md", promptsDir.resolve("coding_prompt_yolo.md"));
+            copyTemplateIfNotExists("build_validator_prompt.template.md", promptsDir.resolve("build_validator_prompt.md"));
 
             log.info("Scaffolded prompts for project: {}", projectPath);
         } catch (IOException e) {

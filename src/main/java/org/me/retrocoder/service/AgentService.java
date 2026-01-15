@@ -7,6 +7,7 @@ import org.me.retrocoder.agent.ClaudeClient;
 import org.me.retrocoder.agent.ClaudeClientFactory;
 import org.me.retrocoder.agent.LangChain4jClientFactory;
 import org.me.retrocoder.agent.RateLimitException;
+import org.me.retrocoder.model.AgentPhase;
 import org.me.retrocoder.model.AgentRole;
 import org.me.retrocoder.model.AgentStatus;
 import org.me.retrocoder.model.AiAgentConfig;
@@ -46,6 +47,7 @@ public class AgentService {
     private static final long RATE_LIMIT_PAUSE_MS = 60000; // 1 minute pause on rate limit
     private static final int MAX_RATE_LIMIT_RETRIES = 3;
     private static final long SESSION_DELAY_MS = 3000; // 3 second delay between sessions
+    private static final int MAX_BUILD_VALIDATION_CYCLES = 10; // Prevent infinite build-fix loops
 
     /**
      * Get agent status for a project.
@@ -113,13 +115,15 @@ public class AgentService {
     }
 
     /**
-     * Main agent loop that runs the coding agent.
-     * Continues running sessions until all features are complete or stopped by user.
+     * Main agent loop that runs through phases: INITIALIZING -> CODING -> BUILD_VALIDATING -> (repeat if errors) -> COMPLETE.
+     * Continues running sessions until build is successful with no errors or stopped by user.
      */
     private void runAgentLoop(String projectName, String projectPath, boolean yoloMode) {
         ClaudeClient client = null;
         int rateLimitRetries = 0;
         int sessionNumber = 0;
+        int buildValidationCycles = 0;
+        AgentPhase currentPhase = AgentPhase.INITIALIZING;
 
         try {
             // Get the AI agent configuration for the coding role
@@ -134,37 +138,125 @@ public class AgentService {
             }
             runningClients.put(projectName, client);
 
-            // Main loop - continue until all features complete or stopped
-            while (!Boolean.TRUE.equals(stopRequested.get(projectName))) {
+            // Main loop - continue until complete or stopped
+            while (!Boolean.TRUE.equals(stopRequested.get(projectName)) && currentPhase != AgentPhase.COMPLETE) {
                 sessionNumber++;
 
-                // Check if we have features - determines initializer vs coding mode
+                // Determine current phase based on feature state
                 var stats = featureService.getStats(projectName);
                 int totalFeatures = stats.getTotal();
                 int passingFeatures = stats.getPassing();
-                boolean isInitializer = totalFeatures == 0;
 
-                // Check if all features are complete
-                if (!isInitializer && passingFeatures >= totalFeatures) {
-                    log.info("All features complete for project: {} ({}/{})",
-                        projectName, passingFeatures, totalFeatures);
-                    webSocketSessionManager.broadcastLog(projectName,
-                        String.format("\n*** All %d features complete! ***", totalFeatures));
-                    break;
+                // Phase determination logic
+                if (totalFeatures == 0) {
+                    // No features yet - we're in initializer phase
+                    currentPhase = AgentPhase.INITIALIZING;
+                } else if (passingFeatures < totalFeatures) {
+                    // Features exist but not all complete - coding phase
+                    currentPhase = AgentPhase.CODING;
+                } else {
+                    // All features complete - switch to build validation
+                    currentPhase = AgentPhase.BUILD_VALIDATING;
                 }
 
+                // Handle BUILD_VALIDATING phase
+                if (currentPhase == AgentPhase.BUILD_VALIDATING) {
+                    buildValidationCycles++;
+
+                    // Check if we've exceeded max cycles
+                    if (buildValidationCycles > MAX_BUILD_VALIDATION_CYCLES) {
+                        log.warn("Max build validation cycles ({}) exceeded for project: {}",
+                            MAX_BUILD_VALIDATION_CYCLES, projectName);
+                        webSocketSessionManager.broadcastLog(projectName,
+                            String.format("\n*** WARNING: Max build validation cycles (%d) exceeded. Stopping. ***",
+                                MAX_BUILD_VALIDATION_CYCLES));
+                        currentPhase = AgentPhase.COMPLETE;
+                        break;
+                    }
+
+                    log.info("Build validation cycle {} for project: {}", buildValidationCycles, projectName);
+                    webSocketSessionManager.broadcastLog(projectName,
+                        String.format("\n*** BUILD VALIDATION CYCLE %d - Checking for compilation errors ***",
+                            buildValidationCycles));
+
+                    // Get count of pending bugfix features before running validator
+                    int bugfixCountBefore = featureService.getPendingBugfixCount(projectName);
+
+                    // Run build validator agent
+                    String buildValidatorPrompt;
+                    try {
+                        buildValidatorPrompt = promptService.getBuildValidatorPrompt(projectPath);
+                        buildValidatorPrompt = adaptPromptForJava(buildValidatorPrompt, projectName);
+                    } catch (Exception e) {
+                        // Fallback to loading from classpath if not in project prompts
+                        log.warn("Build validator prompt not found in project, using template");
+                        buildValidatorPrompt = promptService.loadPrompt("build_validator_prompt", projectPath);
+                        buildValidatorPrompt = adaptPromptForJava(buildValidatorPrompt, projectName);
+                    }
+
+                    // Clean up temp files before session
+                    cleanupTempClaudeFiles(projectPath);
+
+                    try {
+                        final ClaudeClient finalClient = client;
+                        @SuppressWarnings("unused")
+                        String response = finalClient.sendPrompt(buildValidatorPrompt, projectPath, chunk -> {
+                            webSocketSessionManager.broadcastLog(projectName, chunk);
+                            if (Boolean.TRUE.equals(stopRequested.get(projectName))) {
+                                throw new RuntimeException("Agent stopped by user");
+                            }
+                        });
+
+                        // Clean up temp files after session
+                        cleanupTempClaudeFiles(projectPath);
+
+                        // Check if new bugfix features were created
+                        int bugfixCountAfter = featureService.getPendingBugfixCount(projectName);
+                        int newBugfixes = bugfixCountAfter - bugfixCountBefore;
+
+                        if (newBugfixes > 0) {
+                            log.info("Build validator created {} bugfix features for project: {}",
+                                newBugfixes, projectName);
+                            webSocketSessionManager.broadcastLog(projectName,
+                                String.format("\n*** BUILD VALIDATION FOUND %d ERRORS - Switching to CODING phase to fix them ***",
+                                    newBugfixes));
+                            // Features are now incomplete, loop will switch to CODING phase
+                        } else {
+                            // No new bugfixes - build is clean!
+                            log.info("Build validation successful - no errors found for project: {}", projectName);
+                            webSocketSessionManager.broadcastLog(projectName,
+                                "\n*** BUILD SUCCESSFUL - No compilation errors! Project complete! ***");
+                            currentPhase = AgentPhase.COMPLETE;
+                        }
+
+                        rateLimitRetries = 0;
+
+                    } catch (RateLimitException e) {
+                        rateLimitRetries = handleRateLimit(projectName, rateLimitRetries);
+                        if (rateLimitRetries < 0) throw e; // Max retries exceeded
+                        continue; // Retry the session
+                    }
+
+                    // Small delay before next session
+                    if (!Boolean.TRUE.equals(stopRequested.get(projectName)) && currentPhase != AgentPhase.COMPLETE) {
+                        Thread.sleep(SESSION_DELAY_MS);
+                    }
+                    continue;
+                }
+
+                // Handle INITIALIZING and CODING phases
                 log.info("Agent session {} for {}: {} (features={}, passing={})",
                     sessionNumber, projectName,
-                    isInitializer ? "INITIALIZER" : "CODING", totalFeatures, passingFeatures);
+                    currentPhase == AgentPhase.INITIALIZING ? "INITIALIZER" : "CODING",
+                    totalFeatures, passingFeatures);
 
                 // Load appropriate prompt
-                String promptName = isInitializer ? "initializer_prompt.md"
+                String promptName = currentPhase == AgentPhase.INITIALIZING ? "initializer_prompt.md"
                     : (yoloMode ? "coding_prompt_yolo.md" : "coding_prompt.md");
 
                 String prompt;
                 try {
                     prompt = promptService.getPromptContent(projectPath, promptName);
-                    // Replace MCP tool references with curl API calls
                     prompt = adaptPromptForJava(prompt, projectName);
                 } catch (Exception e) {
                     log.error("Failed to load prompt: {}", promptName, e);
@@ -174,21 +266,17 @@ public class AgentService {
 
                 webSocketSessionManager.broadcastLog(projectName,
                     String.format("\n--- Starting %s session #%d (features: %d/%d complete) ---",
-                        isInitializer ? "initializer" : "coding", sessionNumber, passingFeatures, totalFeatures));
+                        currentPhase == AgentPhase.INITIALIZING ? "initializer" : "coding",
+                        sessionNumber, passingFeatures, totalFeatures));
 
-                // Clean up any existing temp files BEFORE starting a new session
-                // This prevents accumulation if previous sessions left files behind
+                // Clean up temp files before session
                 cleanupTempClaudeFiles(projectPath);
 
                 try {
-                    // Run agent - send prompt and stream response
                     final ClaudeClient finalClient = client;
                     @SuppressWarnings("unused")
                     String response = finalClient.sendPrompt(prompt, projectPath, chunk -> {
-                        // Stream output to WebSocket
                         webSocketSessionManager.broadcastLog(projectName, chunk);
-
-                        // Check for stop request
                         if (Boolean.TRUE.equals(stopRequested.get(projectName))) {
                             throw new RuntimeException("Agent stopped by user");
                         }
@@ -198,10 +286,9 @@ public class AgentService {
                     webSocketSessionManager.broadcastLog(projectName,
                         "\n--- Session #" + sessionNumber + " complete ---");
 
-                    // Clean up temp files after each session
+                    // Clean up temp files after session
                     cleanupTempClaudeFiles(projectPath);
 
-                    // Reset rate limit retries on success
                     rateLimitRetries = 0;
 
                     // Small delay before next session
@@ -210,39 +297,24 @@ public class AgentService {
                     }
 
                 } catch (RateLimitException e) {
-                    rateLimitRetries++;
-                    if (rateLimitRetries >= MAX_RATE_LIMIT_RETRIES) {
-                        log.error("Max rate limit retries ({}) exceeded for project: {}", MAX_RATE_LIMIT_RETRIES, projectName);
-                        webSocketSessionManager.broadcastLog(projectName, "ERROR: Rate limit - max retries exceeded. Stopping agent.");
-                        throw e;
-                    }
-
-                    log.warn("Rate limit hit for project: {}, pausing {} seconds before retry ({}/{})",
-                        projectName, RATE_LIMIT_PAUSE_MS / 1000, rateLimitRetries, MAX_RATE_LIMIT_RETRIES);
-                    webSocketSessionManager.broadcastLog(projectName,
-                        String.format("Rate limit hit. Pausing %d seconds before retry (%d/%d)...",
-                            RATE_LIMIT_PAUSE_MS / 1000, rateLimitRetries, MAX_RATE_LIMIT_RETRIES));
-
-                    // Pause before retry
-                    try {
-                        Thread.sleep(RATE_LIMIT_PAUSE_MS);
-                    } catch (InterruptedException ie) {
-                        Thread.currentThread().interrupt();
-                        throw new RuntimeException("Agent stopped during rate limit pause");
-                    }
-
-                    // Check if stopped during pause
-                    if (Boolean.TRUE.equals(stopRequested.get(projectName))) {
-                        throw new RuntimeException("Agent stopped by user");
-                    }
-
-                    webSocketSessionManager.broadcastLog(projectName, "Resuming after rate limit pause...");
+                    rateLimitRetries = handleRateLimit(projectName, rateLimitRetries);
+                    if (rateLimitRetries < 0) throw e; // Max retries exceeded
+                    // Continue to retry the session
                 }
             }
 
             // Update status
             agentStatuses.put(projectName, AgentStatus.STOPPED);
             webSocketSessionManager.broadcastAgentStatus(projectName, AgentStatus.STOPPED);
+
+            if (currentPhase == AgentPhase.COMPLETE) {
+                webSocketSessionManager.broadcastLog(projectName,
+                    "\n========================================");
+                webSocketSessionManager.broadcastLog(projectName,
+                    "  PROJECT COMPLETE - All features implemented and build successful!");
+                webSocketSessionManager.broadcastLog(projectName,
+                    "========================================\n");
+            }
 
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().contains("stopped by user")) {
@@ -264,6 +336,34 @@ public class AgentService {
             removeLockFile(projectPath);
             cleanupTempClaudeFiles(projectPath);
         }
+    }
+
+    /**
+     * Handle rate limit with retry logic.
+     * Returns the new retry count, or -1 if max retries exceeded.
+     */
+    private int handleRateLimit(String projectName, int currentRetries) throws InterruptedException {
+        currentRetries++;
+        if (currentRetries >= MAX_RATE_LIMIT_RETRIES) {
+            log.error("Max rate limit retries ({}) exceeded for project: {}", MAX_RATE_LIMIT_RETRIES, projectName);
+            webSocketSessionManager.broadcastLog(projectName, "ERROR: Rate limit - max retries exceeded. Stopping agent.");
+            return -1;
+        }
+
+        log.warn("Rate limit hit for project: {}, pausing {} seconds before retry ({}/{})",
+            projectName, RATE_LIMIT_PAUSE_MS / 1000, currentRetries, MAX_RATE_LIMIT_RETRIES);
+        webSocketSessionManager.broadcastLog(projectName,
+            String.format("Rate limit hit. Pausing %d seconds before retry (%d/%d)...",
+                RATE_LIMIT_PAUSE_MS / 1000, currentRetries, MAX_RATE_LIMIT_RETRIES));
+
+        Thread.sleep(RATE_LIMIT_PAUSE_MS);
+
+        if (Boolean.TRUE.equals(stopRequested.get(projectName))) {
+            throw new RuntimeException("Agent stopped by user");
+        }
+
+        webSocketSessionManager.broadcastLog(projectName, "Resuming after rate limit pause...");
+        return currentRetries;
     }
 
     /**

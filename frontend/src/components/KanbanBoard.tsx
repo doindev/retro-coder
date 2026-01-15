@@ -1,14 +1,17 @@
 import { KanbanColumn } from './KanbanColumn'
-import type { Feature, FeatureListResponse } from '../lib/types'
+import type { AgentStatus, Feature, FeatureListResponse } from '../lib/types'
 
 interface KanbanBoardProps {
   features: FeatureListResponse | undefined
   onFeatureClick: (feature: Feature) => void
   onAddFeature?: () => void
+  onReportBug?: () => void
   onExpandProject?: () => void
+  agentStatus?: AgentStatus
+  onResetInProgress?: () => void
 }
 
-export function KanbanBoard({ features, onFeatureClick, onAddFeature, onExpandProject }: KanbanBoardProps) {
+export function KanbanBoard({ features, onFeatureClick, onAddFeature, onReportBug, onExpandProject, agentStatus, onResetInProgress }: KanbanBoardProps) {
   const hasFeatures = features && (features.pending.length + features.in_progress.length + features.done.length) > 0
 
   if (!features) {
@@ -37,6 +40,7 @@ export function KanbanBoard({ features, onFeatureClick, onAddFeature, onExpandPr
         color="pending"
         onFeatureClick={onFeatureClick}
         onAddFeature={onAddFeature}
+        onReportBug={onReportBug}
         onExpandProject={onExpandProject}
         showExpandButton={hasFeatures}
       />
@@ -46,6 +50,8 @@ export function KanbanBoard({ features, onFeatureClick, onAddFeature, onExpandPr
         features={features.in_progress}
         color="progress"
         onFeatureClick={onFeatureClick}
+        onResetInProgress={onResetInProgress}
+        showResetButton={agentStatus === 'stopped' && features.in_progress.length > 0}
       />
       <KanbanColumn
         title="Done"

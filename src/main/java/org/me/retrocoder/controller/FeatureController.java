@@ -190,6 +190,25 @@ public class FeatureController {
     }
 
     /**
+     * Reset all in-progress features back to pending.
+     */
+    @PostMapping("/reset-in-progress")
+    public ResponseEntity<java.util.Map<String, Integer>> resetAllInProgress(
+            @PathVariable String projectName) {
+        if (!registryService.projectExists(projectName)) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            int count = featureService.resetAllInProgress(projectName);
+            return ResponseEntity.ok(java.util.Map.of("reset_count", count));
+        } catch (Exception e) {
+            log.error("Failed to reset in-progress features for project: {}", projectName, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    /**
      * Skip feature (move to end of queue).
      */
     @PostMapping("/{featureId}/skip")

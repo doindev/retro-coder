@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useProjects, useFeatures, useAgentStatus } from './hooks/useProjects'
+import { useProjects, useFeatures, useAgentStatus, useResetInProgressFeatures } from './hooks/useProjects'
 import { useProjectWebSocket } from './hooks/useWebSocket'
 import { useFeatureSound } from './hooks/useFeatureSound'
 import { useCelebration } from './hooks/useCelebration'
@@ -24,6 +24,7 @@ import { SettingsModal } from './components/SettingsModal'
 import { DashboardView } from './components/DashboardView'
 import { NewProjectModal } from './components/NewProjectModal'
 import { SpecCreationModal } from './components/SpecCreationModal'
+import { BugFixRequestForm } from './components/BugFixRequestForm'
 import { Loader2, Settings, FileText } from 'lucide-react'
 import type { Feature } from './lib/types'
 
@@ -50,6 +51,7 @@ function App() {
   })
 
   const [showAddFeature, setShowAddFeature] = useState(false)
+  const [showBugReport, setShowBugReport] = useState(false)
   const [showExpandProject, setShowExpandProject] = useState(false)
   const [showNewProject, setShowNewProject] = useState(false)
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null)
@@ -65,6 +67,7 @@ function App() {
   const { data: features } = useFeatures(selectedProject)
   useAgentStatus(selectedProject) // Keep polling for status updates
   const wsState = useProjectWebSocket(selectedProject)
+  const resetInProgressMutation = useResetInProgressFeatures(selectedProject ?? '')
 
   // Play sounds when features move between columns
   useFeatureSound(features)
@@ -136,6 +139,12 @@ function App() {
         setShowAddFeature(true)
       }
 
+      // B : Report a bug (when project selected)
+      if ((e.key === 'b' || e.key === 'B') && selectedProject) {
+        e.preventDefault()
+        setShowBugReport(true)
+      }
+
       // E : Expand project with AI (when project selected and has features)
       if ((e.key === 'e' || e.key === 'E') && selectedProject && features &&
           (features.pending.length + features.in_progress.length + features.done.length) > 0) {
@@ -169,6 +178,8 @@ function App() {
           setShowSettings(false)
         } else if (assistantOpen) {
           setAssistantOpen(false)
+        } else if (showBugReport) {
+          setShowBugReport(false)
         } else if (showAddFeature) {
           setShowAddFeature(false)
         } else if (selectedFeature) {
@@ -181,7 +192,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [selectedProject, showAddFeature, showExpandProject, selectedFeature, debugOpen, assistantOpen, features, showSettings, handleViewModeChange])
+  }, [selectedProject, showAddFeature, showBugReport, showExpandProject, selectedFeature, debugOpen, assistantOpen, features, showSettings, handleViewModeChange])
 
   // Combine WebSocket progress with feature data
   const progress = wsState.progress.total > 0 ? wsState.progress : {
@@ -330,7 +341,10 @@ function App() {
               features={features}
               onFeatureClick={setSelectedFeature}
               onAddFeature={() => setShowAddFeature(true)}
+              onReportBug={() => setShowBugReport(true)}
               onExpandProject={() => setShowExpandProject(true)}
+              agentStatus={wsState.agentStatus}
+              onResetInProgress={() => resetInProgressMutation.mutate()}
             />
           </div>
         )}
@@ -341,6 +355,14 @@ function App() {
         <AddFeatureForm
           projectName={selectedProject}
           onClose={() => setShowAddFeature(false)}
+        />
+      )}
+
+      {/* Bug Fix Request Modal */}
+      {showBugReport && selectedProject && (
+        <BugFixRequestForm
+          projectName={selectedProject}
+          onClose={() => setShowBugReport(false)}
         />
       )}
 

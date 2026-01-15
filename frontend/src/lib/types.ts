@@ -447,3 +447,22 @@ export interface SecurityStatus {
 export interface UnlockRequest {
   password: string
 }
+
+// ============================================================================
+// Bug Investigation Types
+// ============================================================================
+
+export interface BugInvestigationRequest {
+  description: string
+}
+
+export interface BugInvestigationResponse {
+  description: string
+  rootCause: string | null
+  affectedFiles: string[]
+  steps: string[]
+  additionalNotes: string | null
+  suggestedName: string | null
+  success: boolean
+  error: string | null
+}

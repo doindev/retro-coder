@@ -251,6 +251,33 @@ public class FeatureService {
     }
 
     /**
+     * Reset all in-progress features back to pending status.
+     * Returns the count of features that were reset.
+     */
+    public int resetAllInProgress(String projectName) {
+        String projectPath = getProjectPath(projectName);
+
+        try (Connection conn = DatabaseConfig.getProjectDatabaseConnection(projectPath)) {
+            String sql = "UPDATE features SET in_progress = 0 WHERE in_progress = 1 AND passes = 0";
+            int count;
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                count = pstmt.executeUpdate();
+            }
+
+            if (count > 0) {
+                // Broadcast updates via WebSocket
+                broadcastProgressUpdate(projectName, conn);
+            }
+
+            log.info("Reset {} in-progress features to pending for project: {}", count, projectName);
+            return count;
+        } catch (Exception e) {
+            log.error("Failed to reset in-progress features for project: {}", projectName, e);
+            throw new RuntimeException("Failed to reset in-progress features", e);
+        }
+    }
+
+    /**
      * Skip feature (move to end of queue).
      */
     public FeatureDTO skip(String projectName, Long featureId) {
@@ -396,6 +423,100 @@ public class FeatureService {
         } catch (Exception e) {
             log.error("Failed to check features for project: {}", projectName, e);
             return false;
+        }
+    }
+
+    /**
+     * Check if all non-bugfix features are complete.
+     * This is used to determine when to switch to build validation phase.
+     */
+    public boolean areAllNonBugfixFeaturesComplete(String projectName) {
+        String projectPath = getProjectPath(projectName);
+
+        try (Connection conn = DatabaseConfig.getProjectDatabaseConnection(projectPath)) {
+            // Check if there are any non-bugfix features that are not passing
+            String sql = "SELECT COUNT(*) as count FROM features WHERE LOWER(category) != 'bugfix' AND passes = 0";
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                if (rs.next()) {
+                    return rs.getInt("count") == 0;
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to check non-bugfix features for project: {}", projectName, e);
+            return false;
+        }
+    }
+
+    /**
+     * Check if there are any pending bugfix features.
+     */
+    public boolean hasPendingBugfixFeatures(String projectName) {
+        String projectPath = getProjectPath(projectName);
+
+        try (Connection conn = DatabaseConfig.getProjectDatabaseConnection(projectPath)) {
+            String sql = "SELECT COUNT(*) as count FROM features WHERE LOWER(category) = 'bugfix' AND passes = 0";
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                if (rs.next()) {
+                    return rs.getInt("count") > 0;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Failed to check bugfix features for project: {}", projectName, e);
+            return false;
+        }
+    }
+
+    /**
+     * Get count of pending bugfix features.
+     */
+    public int getPendingBugfixCount(String projectName) {
+        String projectPath = getProjectPath(projectName);
+
+        try (Connection conn = DatabaseConfig.getProjectDatabaseConnection(projectPath)) {
+            String sql = "SELECT COUNT(*) as count FROM features WHERE LOWER(category) = 'bugfix' AND passes = 0";
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                if (rs.next()) {
+                    return rs.getInt("count");
+                }
+            }
+            return 0;
+        } catch (Exception e) {
+            log.error("Failed to get bugfix count for project: {}", projectName, e);
+            return 0;
+        }
+    }
+
+    /**
+     * Get bugfix feature statistics.
+     */
+    public FeatureStatsDTO getBugfixStats(String projectName) {
+        String projectPath = getProjectPath(projectName);
+
+        try (Connection conn = DatabaseConfig.getProjectDatabaseConnection(projectPath)) {
+            int passing = 0, inProgress = 0, total = 0;
+
+            String sql = "SELECT passes, in_progress FROM features WHERE LOWER(category) = 'bugfix'";
+            try (Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(sql)) {
+                while (rs.next()) {
+                    total++;
+                    if (rs.getBoolean("passes")) {
+                        passing++;
+                    } else if (rs.getBoolean("in_progress")) {
+                        inProgress++;
+                    }
+                }
+            }
+
+            return FeatureStatsDTO.of(passing, inProgress, total);
+        } catch (Exception e) {
+            log.error("Failed to get bugfix stats for project: {}", projectName, e);
+            throw new RuntimeException("Failed to get bugfix stats", e);
         }
     }
 

@@ -1,5 +1,5 @@
 import { FeatureCard } from './FeatureCard'
-import { Plus, Sparkles } from 'lucide-react'
+import { Plus, Sparkles, RotateCcw, Bug } from 'lucide-react'
 import type { Feature } from '../lib/types'
 
 interface KanbanColumnProps {
@@ -9,8 +9,11 @@ interface KanbanColumnProps {
   color: 'pending' | 'progress' | 'done'
   onFeatureClick: (feature: Feature) => void
   onAddFeature?: () => void
+  onReportBug?: () => void
   onExpandProject?: () => void
   showExpandButton?: boolean
+  onResetInProgress?: () => void
+  showResetButton?: boolean
 }
 
 const colorMap = {
@@ -26,8 +29,11 @@ export function KanbanColumn({
   color,
   onFeatureClick,
   onAddFeature,
+  onReportBug,
   onExpandProject,
   showExpandButton,
+  onResetInProgress,
+  showResetButton,
 }: KanbanColumnProps) {
   return (
     <div
@@ -44,7 +50,7 @@ export function KanbanColumn({
             {title}
             <span className="neo-badge bg-white text-[var(--color-neo-text)]">{count}</span>
           </h2>
-          {(onAddFeature || onExpandProject) && (
+          {(onAddFeature || onReportBug || onExpandProject || (onResetInProgress && showResetButton)) && (
             <div className="flex items-center gap-2">
               {onAddFeature && (
                 <button
@@ -55,6 +61,15 @@ export function KanbanColumn({
                   <Plus size={16} />
                 </button>
               )}
+              {onReportBug && (
+                <button
+                  onClick={onReportBug}
+                  className="neo-btn bg-red-500 text-white text-sm py-1.5 px-2"
+                  title="Report a bug (B)"
+                >
+                  <Bug size={16} />
+                </button>
+              )}
               {onExpandProject && showExpandButton && (
                 <button
                   onClick={onExpandProject}
@@ -62,6 +77,15 @@ export function KanbanColumn({
                   title="Expand project with AI (E)"
                 >
                   <Sparkles size={16} />
+                </button>
+              )}
+              {onResetInProgress && showResetButton && (
+                <button
+                  onClick={onResetInProgress}
+                  className="neo-btn bg-[var(--color-neo-pending)] text-black text-sm py-1.5 px-2"
+                  title="Reset to pending"
+                >
+                  <RotateCcw size={16} />
                 </button>
               )}
             </div>

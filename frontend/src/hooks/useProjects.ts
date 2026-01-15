@@ -108,6 +108,17 @@ export function useSkipFeature(projectName: string) {
   })
 }
 
+export function useResetInProgressFeatures(projectName: string) {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: () => api.resetInProgressFeatures(projectName),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['features', projectName] })
+    },
+  })
+}
+
 // ============================================================================
 // Agent
 // ============================================================================
@@ -385,5 +396,16 @@ export function useUpdateSettings() {
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] })
     },
+  })
+}
+
+// ============================================================================
+// Bug Investigation
+// ============================================================================
+
+export function useInvestigateBug(projectName: string) {
+  return useMutation({
+    mutationFn: (description: string) =>
+      api.investigateBug(projectName, { description }),
   })
 }

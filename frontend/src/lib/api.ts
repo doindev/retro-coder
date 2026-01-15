@@ -29,6 +29,8 @@ import type {
   AgentDefaults,
   SecurityStatus,
   ModelInfo,
+  BugInvestigationRequest,
+  BugInvestigationResponse,
 } from './types'
 
 const API_BASE = '/api'
@@ -136,6 +138,12 @@ export async function deleteFeature(projectName: string, featureId: number): Pro
 
 export async function skipFeature(projectName: string, featureId: number): Promise<void> {
   await fetchJSON(`/projects/${encodeURIComponent(projectName)}/features/${featureId}/skip`, {
+    method: 'POST',
+  })
+}
+
+export async function resetInProgressFeatures(projectName: string): Promise<{ reset_count: number }> {
+  return fetchJSON(`/projects/${encodeURIComponent(projectName)}/features/reset-in-progress`, {
     method: 'POST',
   })
 }
@@ -408,5 +416,19 @@ export async function unlockEncryption(password: string): Promise<void> {
 export async function lockEncryption(): Promise<void> {
   await fetchJSON('/security/lock', {
     method: 'POST',
+  })
+}
+
+// ============================================================================
+// Bug Investigation API
+// ============================================================================
+
+export async function investigateBug(
+  projectName: string,
+  request: BugInvestigationRequest
+): Promise<BugInvestigationResponse> {
+  return fetchJSON(`/projects/${encodeURIComponent(projectName)}/bugs/investigate`, {
+    method: 'POST',
+    body: JSON.stringify(request),
   })
 }
