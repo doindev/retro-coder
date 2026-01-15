@@ -213,10 +213,9 @@ export function BugFixRequestForm({ projectName, onClose }: BugFixRequestFormPro
   const isReviewValid = name.trim().length > 0 && steps.some((s) => s.value.trim().length > 0)
 
   return (
-    <div className="neo-modal-backdrop" onClick={onClose}>
+    <div className="neo-modal-backdrop">
       <div
         className="neo-modal w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b-3 border-[var(--color-neo-border)]">

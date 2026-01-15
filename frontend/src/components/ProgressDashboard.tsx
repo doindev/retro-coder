@@ -14,38 +14,38 @@ export function ProgressDashboard({
   isConnected,
 }: ProgressDashboardProps) {
   return (
-    <div className="neo-card p-6">
-      <div className="flex items-center justify-between mb-0">
-        <h2 className="font-display text-xl font-bold uppercase">
+    <div className="neo-card p-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-display text-lg font-bold uppercase">
           Progress
         </h2>
         <div className="flex items-center gap-2">
           {isConnected ? (
             <>
-              <Wifi size={16} className="text-[var(--color-neo-done)]" />
-              <span className="text-sm text-[var(--color-neo-done)]">Live</span>
+              <Wifi size={14} className="text-[var(--color-neo-done)]" />
+              <span className="text-xs text-[var(--color-neo-done)]">Live</span>
             </>
           ) : (
             <>
-              <WifiOff size={16} className="text-[var(--color-neo-danger)]" />
-              <span className="text-sm text-[var(--color-neo-danger)]">Offline</span>
+              <WifiOff size={14} className="text-[var(--color-neo-danger)]" />
+              <span className="text-xs text-[var(--color-neo-danger)]">Offline</span>
             </>
           )}
         </div>
       </div>
 
       {/* Large Percentage */}
-      <div className="text-center mb-6">
-        <span className="font-display text-6xl font-bold">
+      <div className="text-center mb-3">
+        <span className="font-display text-5xl font-bold">
           {percentage.toFixed(1)}
         </span>
-        <span className="font-display text-3xl font-bold text-[var(--color-neo-text-secondary)]">
+        <span className="font-display text-2xl font-bold text-[var(--color-neo-text-secondary)]">
           %
         </span>
       </div>
 
       {/* Progress Bar */}
-      <div className="neo-progress mb-4">
+      <div className="neo-progress mb-2">
         <div
           className="neo-progress-fill"
           style={{ width: `${percentage}%` }}
@@ -53,21 +53,21 @@ export function ProgressDashboard({
       </div>
 
       {/* Stats */}
-      <div className="flex justify-center gap-8 text-center">
+      <div className="flex justify-center gap-6 text-center">
         <div>
-          <span className="font-mono text-3xl font-bold text-[var(--color-neo-done)]">
+          <span className="font-mono text-2xl font-bold text-[var(--color-neo-done)]">
             {passing}
           </span>
-          <span className="block text-sm text-[var(--color-neo-text-secondary)] uppercase">
+          <span className="block text-xs text-[var(--color-neo-text-secondary)] uppercase">
             Passing
           </span>
         </div>
-        <div className="text-4xl text-[var(--color-neo-text-secondary)]">/</div>
+        <div className="text-3xl text-[var(--color-neo-text-secondary)]">/</div>
         <div>
-          <span className="font-mono text-3xl font-bold">
+          <span className="font-mono text-2xl font-bold">
             {total}
           </span>
-          <span className="block text-sm text-[var(--color-neo-text-secondary)] uppercase">
+          <span className="block text-xs text-[var(--color-neo-text-secondary)] uppercase">
             Total
           </span>
         </div>

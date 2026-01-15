@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useProjects, useFeatures, useAgentStatus, useResetInProgressFeatures } from './hooks/useProjects'
 import { useProjectWebSocket } from './hooks/useWebSocket'
@@ -25,7 +25,7 @@ import { DashboardView } from './components/DashboardView'
 import { NewProjectModal } from './components/NewProjectModal'
 import { SpecCreationModal } from './components/SpecCreationModal'
 import { BugFixRequestForm } from './components/BugFixRequestForm'
-import { Loader2, Settings, FileText } from 'lucide-react'
+import { Loader2, Settings, FileText, Search, X } from 'lucide-react'
 import type { Feature } from './lib/types'
 
 type ViewMode = 'dashboard' | 'project'
@@ -61,6 +61,7 @@ function App() {
   const [assistantOpen, setAssistantOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showSpecCreation, setShowSpecCreation] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const queryClient = useQueryClient()
   const { data: projects, isLoading: projectsLoading } = useProjects()
@@ -194,16 +195,49 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [selectedProject, showAddFeature, showBugReport, showExpandProject, selectedFeature, debugOpen, assistantOpen, features, showSettings, handleViewModeChange])
 
-  // Combine WebSocket progress with feature data
-  const progress = wsState.progress.total > 0 ? wsState.progress : {
-    passing: features?.done.length ?? 0,
-    total: (features?.pending.length ?? 0) + (features?.in_progress.length ?? 0) + (features?.done.length ?? 0),
+  // Calculate progress from features data (source of truth) or fall back to WebSocket for initial load
+  const progress = features ? {
+    passing: features.done.length,
+    total: features.pending.length + features.in_progress.length + features.done.length,
+    percentage: 0,
+  } : wsState.progress.total > 0 ? {
+    // Fall back to WebSocket data only before features query completes
+    passing: wsState.progress.passing,
+    total: wsState.progress.total,
+    percentage: wsState.progress.percentage,
+  } : {
+    passing: 0,
+    total: 0,
     percentage: 0,
   }
 
+  // Calculate percentage if not already set
   if (progress.total > 0 && progress.percentage === 0) {
     progress.percentage = Math.round((progress.passing / progress.total) * 100 * 10) / 10
   }
+
+  // Filter features based on search query
+  const filteredFeatures = useMemo(() => {
+    if (!features) return undefined
+    if (!searchQuery.trim()) return features
+
+    const query = searchQuery.toLowerCase().trim()
+    const filterFeature = (feature: Feature) => {
+      return (
+        feature.priority.toString().includes(query) ||
+        feature.name.toLowerCase().includes(query) ||
+        feature.description?.toLowerCase().includes(query) ||
+        feature.category?.toLowerCase().includes(query) ||
+        feature.steps?.some(step => step.toLowerCase().includes(query))
+      )
+    }
+
+    return {
+      pending: features.pending.filter(filterFeature),
+      in_progress: features.in_progress.filter(filterFeature),
+      done: features.done.filter(filterFeature),
+    }
+  }, [features, searchQuery])
 
   if (!setupComplete) {
     return <SetupWizard onComplete={() => setSetupComplete(true)} />
@@ -336,9 +370,40 @@ function App() {
               </div>
             )}
 
+            {/* Search Filter */}
+            <div className="neo-card p-4">
+              <div className="relative">
+                <Search
+                  size={20}
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[var(--color-neo-text-secondary)]"
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search tasks by name, description, or steps..."
+                  className="neo-input pl-12 pr-10 w-full"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-[var(--color-neo-bg)] rounded transition-colors"
+                    title="Clear search"
+                  >
+                    <X size={18} className="text-[var(--color-neo-text-secondary)] hover:text-[var(--color-neo-text)]" />
+                  </button>
+                )}
+              </div>
+              {searchQuery && filteredFeatures && (
+                <p className="text-sm text-[var(--color-neo-text-secondary)] mt-2">
+                  Showing {filteredFeatures.pending.length + filteredFeatures.in_progress.length + filteredFeatures.done.length} of {progress.total} tasks
+                </p>
+              )}
+            </div>
+
             {/* Kanban Board */}
             <KanbanBoard
-              features={features}
+              features={filteredFeatures}
               onFeatureClick={setSelectedFeature}
               onAddFeature={() => setShowAddFeature(true)}
               onReportBug={() => setShowBugReport(true)}
