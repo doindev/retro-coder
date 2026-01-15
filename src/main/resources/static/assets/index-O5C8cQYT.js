@@ -408,7 +408,7 @@ Error generating stack: `+o.message+`
           relative
           bg-[var(--color-neo-card)]
           border-3 border-[var(--color-neo-border)]
-          shadow-[var(--shadow-neo-sm)]
+          shadow-[var(--shadow-neo-md)]
           px-4 py-3
           flex items-center gap-3
           transition-all duration-150 ease-out
