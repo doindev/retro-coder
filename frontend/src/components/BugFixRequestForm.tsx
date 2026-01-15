@@ -277,7 +277,7 @@ export function BugFixRequestForm({ projectName, onClose }: BugFixRequestFormPro
                   Related Files (Optional)
                 </label>
                 <div
-                  className={`border-3 border-dashed rounded-lg p-6 text-center transition-colors ${
+                  className={`border-3 border-dashed rounded-lg p-3 transition-colors ${
                     isDragging
                       ? 'border-[var(--color-neo-primary)] bg-blue-50'
                       : 'border-[var(--color-neo-border)] hover:border-[var(--color-neo-primary)]'
@@ -286,17 +286,19 @@ export function BugFixRequestForm({ projectName, onClose }: BugFixRequestFormPro
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  <Upload size={32} className="mx-auto mb-3 text-[var(--color-neo-text-secondary)]" />
-                  <p className="text-[var(--color-neo-text-secondary)] mb-2">
-                    Drag & drop files here, or
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleBrowseClick}
-                    className="neo-btn neo-btn-ghost text-sm"
-                  >
-                    Browse Files
-                  </button>
+                  <div className="flex items-center justify-center gap-3">
+                    <Upload size={20} className="text-[var(--color-neo-text-secondary)]" />
+                    <span className="text-sm text-[var(--color-neo-text-secondary)]">
+                      Drag & drop files here, or
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleBrowseClick}
+                      className="neo-btn neo-btn-ghost text-sm py-1 px-2"
+                    >
+                      Browse
+                    </button>
+                  </div>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -305,8 +307,8 @@ export function BugFixRequestForm({ projectName, onClose }: BugFixRequestFormPro
                     className="hidden"
                     accept=".ts,.tsx,.js,.jsx,.java,.py,.json,.xml,.yaml,.yml,.md,.css,.html,.sql,.log,.txt"
                   />
-                  <p className="text-xs text-[var(--color-neo-text-secondary)] mt-3">
-                    Supports: .ts, .tsx, .js, .java, .py, .json, .md, .log, .txt and more
+                  <p className="text-xs text-[var(--color-neo-text-secondary)] text-center mt-2">
+                    .ts, .js, .java, .py, .json, .md, .txt and more
                   </p>
                 </div>
 
