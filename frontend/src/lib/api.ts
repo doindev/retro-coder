@@ -441,10 +441,12 @@ export async function investigateBug(
 
 export async function expandFeature(
   projectName: string,
-  request: FeatureExpansionRequest
+  request: FeatureExpansionRequest,
+  signal?: AbortSignal
 ): Promise<FeatureExpansionResponse> {
   return fetchJSON(`/projects/${encodeURIComponent(projectName)}/features/expand`, {
     method: 'POST',
     body: JSON.stringify(request),
+    signal,
   })
 }

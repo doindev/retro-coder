@@ -1,6 +1,7 @@
-import { useState, useId } from 'react'
-import { X, Plus, Trash2, Loader2, AlertCircle, Sparkles } from 'lucide-react'
-import { useCreateFeature, useExpandFeature } from '../hooks/useProjects'
+import { useState, useId, useRef } from 'react'
+import { X, Plus, Trash2, Loader2, AlertCircle, Sparkles, StopCircle } from 'lucide-react'
+import { useCreateFeature } from '../hooks/useProjects'
+import * as api from '../lib/api'
 
 interface Step {
   id: string
@@ -21,16 +22,35 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
   const [steps, setSteps] = useState<Step[]>([{ id: `${formId}-step-0`, value: '' }])
   const [error, setError] = useState<string | null>(null)
   const [stepCounter, setStepCounter] = useState(1)
+  const [isExpanding, setIsExpanding] = useState(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   const createFeature = useCreateFeature(projectName)
-  const expandFeature = useExpandFeature(projectName)
 
   const handleExpandWithAI = async () => {
-    if (!description.trim() || expandFeature.isPending) return
+    // If already expanding, cancel the operation
+    if (isExpanding) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+        abortControllerRef.current = null
+      }
+      setIsExpanding(false)
+      return
+    }
+
+    if (!description.trim()) return
     setError(null)
+    setIsExpanding(true)
+
+    // Create new AbortController for this request
+    abortControllerRef.current = new AbortController()
 
     try {
-      const result = await expandFeature.mutateAsync(description)
+      const result = await api.expandFeature(
+        projectName,
+        { description },
+        abortControllerRef.current.signal
+      )
 
       if (result.success) {
         // Populate form fields with AI-generated content
@@ -49,7 +69,15 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
         setError(result.error || 'AI expansion failed')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'AI expansion failed')
+      // Don't show error if it was cancelled by user
+      if (err instanceof Error && err.name === 'AbortError') {
+        // Request was cancelled - do nothing
+      } else {
+        setError(err instanceof Error ? err.message : 'AI expansion failed')
+      }
+    } finally {
+      setIsExpanding(false)
+      abortControllerRef.current = null
     }
   }
 
@@ -191,16 +219,18 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
               <button
                 type="button"
                 onClick={handleExpandWithAI}
-                disabled={!description.trim() || expandFeature.isPending}
+                disabled={!description.trim() && !isExpanding}
                 className={`absolute top-2 right-2 p-1.5 rounded border-2 transition-all ${
-                  description.trim() && !expandFeature.isPending
+                  isExpanding
+                    ? 'bg-red-500 border-[var(--color-neo-border)] hover:scale-105 cursor-pointer'
+                    : description.trim()
                     ? 'bg-[var(--color-neo-progress)] border-[var(--color-neo-border)] hover:scale-105 cursor-pointer'
                     : 'bg-gray-200 border-gray-300 opacity-50 cursor-not-allowed'
                 }`}
-                title="Expand with AI - fills in name, category, and steps"
+                title={isExpanding ? 'Cancel AI expansion' : 'Expand with AI - fills in name, category, and steps'}
               >
-                {expandFeature.isPending ? (
-                  <Loader2 size={16} className="animate-spin" />
+                {isExpanding ? (
+                  <StopCircle size={16} className="text-white" />
                 ) : (
                   <Sparkles size={16} />
                 )}
