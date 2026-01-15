@@ -466,3 +466,20 @@ export interface BugInvestigationResponse {
   success: boolean
   error: string | null
 }
+
+// ============================================================================
+// Feature Expansion Types
+// ============================================================================
+
+export interface FeatureExpansionRequest {
+  description: string
+}
+
+export interface FeatureExpansionResponse {
+  name: string | null
+  category: string | null
+  description: string | null
+  steps: string[]
+  success: boolean
+  error: string | null
+}

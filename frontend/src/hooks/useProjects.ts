@@ -409,3 +409,14 @@ export function useInvestigateBug(projectName: string) {
       api.investigateBug(projectName, { description }),
   })
 }
+
+// ============================================================================
+// Feature Expansion
+// ============================================================================
+
+export function useExpandFeature(projectName: string) {
+  return useMutation({
+    mutationFn: (description: string) =>
+      api.expandFeature(projectName, { description }),
+  })
+}

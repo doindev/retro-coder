@@ -113,6 +113,8 @@ export function AgentThought({ logs, agentStatus }: AgentThoughtProps) {
           shadow-[var(--shadow-neo-sm)]
           px-4 py-3
           flex items-center gap-3
+          transition-all duration-150 ease-out
+          hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[var(--shadow-neo-lg)]
           ${isRunning ? 'animate-pulse-neo' : ''}
         `}
       >

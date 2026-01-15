@@ -1,6 +1,6 @@
 import { useState, useId } from 'react'
-import { X, Plus, Trash2, Loader2, AlertCircle } from 'lucide-react'
-import { useCreateFeature } from '../hooks/useProjects'
+import { X, Plus, Trash2, Loader2, AlertCircle, Sparkles } from 'lucide-react'
+import { useCreateFeature, useExpandFeature } from '../hooks/useProjects'
 
 interface Step {
   id: string
@@ -23,6 +23,35 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
   const [stepCounter, setStepCounter] = useState(1)
 
   const createFeature = useCreateFeature(projectName)
+  const expandFeature = useExpandFeature(projectName)
+
+  const handleExpandWithAI = async () => {
+    if (!description.trim() || expandFeature.isPending) return
+    setError(null)
+
+    try {
+      const result = await expandFeature.mutateAsync(description)
+
+      if (result.success) {
+        // Populate form fields with AI-generated content
+        if (result.name) setName(result.name)
+        if (result.category) setCategory(result.category)
+        if (result.description) setDescription(result.description)
+        if (result.steps && result.steps.length > 0) {
+          const newSteps = result.steps.map((s, i) => ({
+            id: `${formId}-step-${i}`,
+            value: s,
+          }))
+          setSteps(newSteps)
+          setStepCounter(newSteps.length)
+        }
+      } else {
+        setError(result.error || 'AI expansion failed')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'AI expansion failed')
+    }
+  }
 
   const handleAddStep = () => {
     setSteps([...steps, { id: `${formId}-step-${stepCounter}`, value: '' }])
@@ -150,13 +179,36 @@ export function AddFeatureForm({ projectName, onClose }: AddFeatureFormProps) {
             <label className="block font-display font-bold mb-2 uppercase text-sm">
               Description
             </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe what this feature should do..."
-              className="neo-input min-h-[100px] resize-y"
-              required
-            />
+            <div className="relative">
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe what this feature should do..."
+                className="neo-input min-h-[100px] resize-y pr-12"
+                required
+              />
+              {/* AI Expand Button - positioned in upper right of textarea */}
+              <button
+                type="button"
+                onClick={handleExpandWithAI}
+                disabled={!description.trim() || expandFeature.isPending}
+                className={`absolute top-2 right-2 p-1.5 rounded border-2 transition-all ${
+                  description.trim() && !expandFeature.isPending
+                    ? 'bg-[var(--color-neo-progress)] border-[var(--color-neo-border)] hover:scale-105 cursor-pointer'
+                    : 'bg-gray-200 border-gray-300 opacity-50 cursor-not-allowed'
+                }`}
+                title="Expand with AI - fills in name, category, and steps"
+              >
+                {expandFeature.isPending ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Sparkles size={16} />
+                )}
+              </button>
+            </div>
+            <p className="text-xs text-[var(--color-neo-text-secondary)] mt-1">
+              Type a description then click the <Sparkles size={12} className="inline" /> button to auto-fill the form with AI
+            </p>
           </div>
 
           {/* Steps */}

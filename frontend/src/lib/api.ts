@@ -31,6 +31,8 @@ import type {
   ModelInfo,
   BugInvestigationRequest,
   BugInvestigationResponse,
+  FeatureExpansionRequest,
+  FeatureExpansionResponse,
 } from './types'
 
 const API_BASE = '/api'
@@ -428,6 +430,20 @@ export async function investigateBug(
   request: BugInvestigationRequest
 ): Promise<BugInvestigationResponse> {
   return fetchJSON(`/projects/${encodeURIComponent(projectName)}/bugs/investigate`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  })
+}
+
+// ============================================================================
+// Feature Expansion API
+// ============================================================================
+
+export async function expandFeature(
+  projectName: string,
+  request: FeatureExpansionRequest
+): Promise<FeatureExpansionResponse> {
+  return fetchJSON(`/projects/${encodeURIComponent(projectName)}/features/expand`, {
     method: 'POST',
     body: JSON.stringify(request),
   })
