@@ -314,8 +314,8 @@ public class ExpandChatSession {
      * Load the expand-project skill from resources.
      */
     private String loadExpandProjectSkill() {
-        // Try to load from the autocoder-master project's .claude/commands directory
-        Path skillPath = Paths.get(System.getProperty("user.dir"), "..", "autocoder-master",
+        // Try to load from the retrocoder-master project's .claude/commands directory
+        Path skillPath = Paths.get(System.getProperty("user.dir"), "..", "retrocoder-master",
                 ".claude", "commands", "expand-project.md");
 
         if (Files.exists(skillPath)) {

@@ -3,10 +3,10 @@
 
 spring:
   datasource:
-    url: jdbc:h2:file:${user.home}/eclipse-workspace/retro-coder/autocoder;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    url: jdbc:h2:file:${user.home}/eclipse-workspace/retro-coder/retrocoder;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
     driver-class-name: org.h2.Driver
-    username: autocoder
-    password: autocoder
+    username: retrocoder
+    password: retrocoder
 
   h2:
     console:

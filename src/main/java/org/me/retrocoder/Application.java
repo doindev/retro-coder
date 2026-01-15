@@ -10,7 +10,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Main Spring Boot application for Autocoder.
+ * Main Spring Boot application for Retrocoder.
  * Supports two modes:
  * - Server mode (default): Runs web server with REST API and WebSocket
  * - CLI mode (--cli flag): Runs interactive command-line interface

@@ -34,7 +34,7 @@ public class InteractiveMenu {
      * Run the main menu loop.
      */
     public void run() {
-        printHeader("AUTOCODER - Autonomous Coding Agent");
+        printHeader("RETROCODER - Autonomous Coding Agent");
 
         while (true) {
             println("");

@@ -26,7 +26,7 @@ import java.util.Set;
 @Configuration
 public class SecurityConfig {
 
-    @Value("${autocoder.security.localhost-only:true}")
+    @Value("${retrocoder.security.localhost-only:true}")
     private boolean localhostOnly;
 
     private static final Set<String> ALLOWED_IPS = Set.of(

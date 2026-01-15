@@ -62,10 +62,20 @@ public class AgentRunner {
                 // Print session header
                 progressService.printSessionHeader(sessionNumber, isInitializer);
 
+                // Send status message based on agent type
+                if (isInitializer) {
+                    webSocketSessionManager.broadcastLog(projectName, "🔧 INITIALIZER AGENT: Analyzing project and creating features.json...");
+                    webSocketSessionManager.broadcastLog(projectName, "📂 Project path: " + projectPath);
+                } else {
+                    webSocketSessionManager.broadcastLog(projectName, "💻 CODING AGENT: Implementing features...");
+                }
+
                 // Load prompt
                 String prompt;
                 if (isInitializer) {
+                    webSocketSessionManager.broadcastLog(projectName, "📝 Loading initializer prompt...");
                     prompt = promptService.getInitializerPrompt(projectPath);
+                    webSocketSessionManager.broadcastLog(projectName, "✅ Prompt loaded, sending to Claude...");
                 } else if (yoloMode) {
                     prompt = promptService.getCodingPromptYolo(projectPath);
                 } else {
@@ -91,6 +101,8 @@ public class AgentRunner {
                 // Check if we should continue
                 if (isInitializer && featureService.hasFeatures(projectName)) {
                     log.info("Initializer complete, switching to coding agent");
+                    webSocketSessionManager.broadcastLog(projectName, "🎉 INITIALIZER COMPLETE: features.json created successfully!");
+                    webSocketSessionManager.broadcastLog(projectName, "🔄 Switching to CODING AGENT mode...");
                     isInitializer = false;
                 }
 

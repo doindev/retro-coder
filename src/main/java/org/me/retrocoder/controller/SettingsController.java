@@ -3,7 +3,7 @@ package org.me.retrocoder.controller;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.me.retrocoder.config.AutocoderProperties;
+import org.me.retrocoder.config.RetrocoderProperties;
 import org.me.retrocoder.model.Settings;
 import org.me.retrocoder.model.dto.ModelInfoDTO;
 import org.me.retrocoder.model.dto.ModelsResponseDTO;
@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SettingsController {
 
     private final RegistryService registryService;
-    private final AutocoderProperties properties;
+    private final RetrocoderProperties properties;
 
     /**
      * Get available models.
@@ -46,8 +46,8 @@ public class SettingsController {
 
         // Find the default model
         String defaultModel = properties.getModels().stream()
-            .filter(AutocoderProperties.Model::isDefault)
-            .map(AutocoderProperties.Model::getId)
+            .filter(RetrocoderProperties.Model::isDefault)
+            .map(RetrocoderProperties.Model::getId)
             .findFirst()
             .orElse(models.isEmpty() ? null : models.get(0).getId());
 

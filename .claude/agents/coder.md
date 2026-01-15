@@ -98,7 +98,7 @@ Fix ALL issues before considering the implementation complete. Never leave linti
 ## Project-Specific Context
 
 For this project (RetroCoder):
-- **Java Backend**: Uses SQLAlchemy, FastAPI, follows patterns in `api/`, `mcp_server/`
+- **Java Backend**: Uses maven, SQLAlchemy, FastAPI, follows patterns in `api/`, `mcp_server/`
 - **React UI**: Uses React 18, TypeScript, TanStack Query, Tailwind CSS v4, Radix UI
 - **Design System**: Neobrutalism style with specific color tokens and animations
 - **Security**: Defense-in-depth with bash command allowlists
@@ -106,10 +106,10 @@ For this project (RetroCoder):
 
 Always check:
 - `requirements.txt` for Python dependencies
-- `ui/package.json` for React dependencies
-- `ui/src/styles/globals.css` for design tokens
+- `frontend/package.json` for React dependencies
+- `frontend/src/styles/globals.css` for design tokens
 - `security.py` for allowed commands
-- Existing components in `ui/src/components/` for UI patterns
+- Existing components in `frontend/src/components/` for UI patterns
 - Existing routers in `server/routers/` for API patterns
 
 ## Communication Style

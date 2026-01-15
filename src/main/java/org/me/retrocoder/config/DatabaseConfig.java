@@ -22,18 +22,18 @@ import lombok.extern.slf4j.Slf4j;
 @Configuration
 public class DatabaseConfig {
 
-    @Value("${autocoder.database.type:sqlite}")
+    @Value("${retrocoder.database.type:sqlite}")
     private String databaseType;
 
-    @Value("${autocoder.database.registry-path:${user.home}/.autocoder/registry.db}")
+    @Value("${retrocoder.database.registry-path:${user.home}/.retrocoder/registry.db}")
     private String registryPath;
 
     /**
-     * Initialize the autocoder directory and registry database on startup.
+     * Initialize the retrocoder directory and registry database on startup.
      * Only active when database type is sqlite.
      */
     @Bean
-    @ConditionalOnProperty(name = "autocoder.database.type", havingValue = "sqlite", matchIfMissing = true)
+    @ConditionalOnProperty(name = "retrocoder.database.type", havingValue = "sqlite", matchIfMissing = true)
     public DatabaseInitializer databaseInitializer() {
         return new DatabaseInitializer(registryPath);
     }
@@ -48,11 +48,11 @@ public class DatabaseConfig {
 
         private void initialize() {
             try {
-                // Ensure .autocoder directory exists
-                Path autocoderDir = Paths.get(System.getProperty("user.home"), ".autocoder");
-                if (!Files.exists(autocoderDir)) {
-                    Files.createDirectories(autocoderDir);
-                    log.info("Created autocoder directory: {}", autocoderDir);
+                // Ensure .retrocoder directory exists
+                Path retrocoderDir = Paths.get(System.getProperty("user.home"), ".retrocoder");
+                if (!Files.exists(retrocoderDir)) {
+                    Files.createDirectories(retrocoderDir);
+                    log.info("Created retrocoder directory: {}", retrocoderDir);
                 }
 
                 // Initialize registry database

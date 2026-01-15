@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * Key-value settings entity for global application settings.
- * Stored in the global registry database (~/.autocoder/registry.db).
+ * Stored in the global registry database (~/.retrocoder/registry.db).
  */
 @Data
 @Entity
@@ -32,6 +32,15 @@ public class Settings {
     public static final String KEY_DEFAULT_MODEL = "model";
     public static final String KEY_DEFAULT_INTEGRATION_MODE = "integration_mode";
     public static final String KEY_PLAYWRIGHT_HEADLESS = "playwright_headless";
+
+    /**
+     * AI Agent configuration setting keys.
+     */
+    public static final String KEY_DEFAULT_AI_AGENT_ID = "default_ai_agent_id";
+    public static final String KEY_SPEC_CREATION_AGENT_ID = "spec_creation_agent_id";
+    public static final String KEY_INITIALIZATION_AGENT_ID = "initialization_agent_id";
+    public static final String KEY_CODING_AGENT_ID = "coding_agent_id";
+    public static final String KEY_ENCRYPTION_TEST_VALUE = "encryption_test_value";
 
     /**
      * Get boolean value.

@@ -3,7 +3,7 @@ package org.me.retrocoder.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.me.retrocoder.config.AutocoderProperties;
+import org.me.retrocoder.config.RetrocoderProperties;
 import org.me.retrocoder.model.dto.FeatureStatsDTO;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class WebhookService {
 
-    private final AutocoderProperties properties;
+    private final RetrocoderProperties properties;
     private final WebClient.Builder webClientBuilder;
 
     /**
