@@ -104,7 +104,7 @@ export function ChatMessage({ message }: ChatMessageProps) {
           >
             {/* Parse content for basic markdown-like formatting */}
             {content && (
-              <div className="whitespace-pre-wrap text-sm leading-relaxed text-[#1a1a1a]">
+              <div className="whitespace-pre-wrap text-base leading-relaxed text-[#1a1a1a]">
                 {content.split('\n').map((line, i) => {
                   // Bold text
                   const boldRegex = /\*\*(.*?)\*\*/g
